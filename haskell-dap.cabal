@@ -1,0 +1,85 @@
+name:                  haskell-dap
+version:               0.0.1.0
+synopsis:              Initial project template from stack
+description:           Please see README.md
+homepage:              https://github.com/phoityne/haskell-dap
+bug-reports:           https://github.com/phoityne/haskell-dap/issues
+license:               BSD3
+license-file:          LICENSE
+author:                phoityne
+maintainer:            phoityne.hs@gmail.com
+copyright:             2017 Author Here
+category:              Development
+build-type:            Simple
+cabal-version:         >=1.10
+extra-source-files:    README.md
+                     , Changelog.md
+                     , cbits/HsVersions.h
+                     , cbits/PosixSource.h
+
+executable haskell-dap
+  default-language:    Haskell2010
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N -Wall -fno-warn-unused-do-bind -fno-warn-name-shadowing
+  if impl(ghc >= 8.0.0) && impl(ghc <= 8.1.0)
+    hs-source-dirs:      app
+                       , app-ghc-8.0.2
+
+  cpp-options:         -DGHCI
+  cc-options:          -fPIC
+  include-dirs:        cbits/
+  c-sources:           cbits/hschooks.c
+
+  main-is:             Main.hs
+  other-modules:       Paths_haskell_dap
+                     , Haskell.DAP.GHCi.Command
+                     , GHCMain
+                     , GHCi.UI
+                     , GHCi.UI.Info
+                     , GHCi.UI.Monad
+                     , GHCi.UI.Tags
+  build-depends:       base
+                     , ghc
+                     , ghci
+                     , transformers
+                     , containers
+                     , time
+                     , directory
+                     , haskeline
+                     , array
+                     , process
+                     , ghc-boot
+                     , filepath
+                     , bytestring
+                     , deepseq
+                     , haskell-dap
+  if os(windows)
+    build-depends:
+      Win32
+  else
+    build-depends:
+      unix
+    ghc-options:
+      -dynamic
+
+
+library
+  hs-source-dirs:      src
+  exposed-modules:     GHCi.DAP.Data
+  build-depends:       base >= 4.7 && < 5
+  default-language:    Haskell2010
+
+
+test-suite haskell-dap-test
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      test
+  main-is:             Spec.hs
+  ghc-options:         -Wall -fno-warn-unused-do-bind -fno-warn-name-shadowing
+  other-modules:       Haskell.DAP.ControlSpec
+  build-depends:       base
+                     , hspec
+                     , bytestring
+                     , data-default
+                     , haskell-dap
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  default-language:    Haskell2010
+
