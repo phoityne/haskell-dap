@@ -1,7 +1,7 @@
 
 # haskell-dap
 
-The goal is "let GHCi talk Debug Adapter Protocol".
+The goal is "let GHCi speak [DAP](https://code.visualstudio.com/docs/extensions/example-debuggers)".
 
 ## Limitation
 currently this project is experimental.
