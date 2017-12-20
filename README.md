@@ -26,7 +26,7 @@ install vscode and phoityne extension.
     %
     % cd haskell-dap
     %
-    % stack install haskell-dap
+    % stack install
       . . . . .
     %
 

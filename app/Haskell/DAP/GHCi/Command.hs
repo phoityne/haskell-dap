@@ -15,6 +15,7 @@ import qualified GHCi.UI.Monad as G
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Class
 import Control.Concurrent
+import Control.Monad
 
 import System.Console.Haskeline
 import RtClosureInspect
@@ -55,6 +56,7 @@ dapCommands :: MVar DAPContext -> [G.Command]
 dapCommands ctx = map mkCmd [
     ("dap-echo",     dapEcho,                noCompletion)
   , ("dap-bindings", dapBindingsCommand ctx, noCompletion)
+  , ("dap-force",    dapForceCommand ctx,    noCompletion)
   ]
   where
     mkCmd (n,a,c) = G.Command { G.cmdName = n
@@ -84,7 +86,7 @@ _DAP_HEADER = "<<DAP>>"
 dapBindingsCommand :: MVar DAPContext -> String -> InputT G.GHCi Bool
 dapBindingsCommand ctx idxStr = do
 
-  let isForce = True
+  let isForce = False
 
   vals <- lift $ getBindigVariables ctx isForce idxStr
 
@@ -110,6 +112,11 @@ getBindigVariablesRoot :: MVar DAPContext -> Bool -> G.GHCi [D.Variable]
 getBindigVariablesRoot ctxMVar isForce = do
   liftIO $ initVariableReferenceMapDAP ctxMVar
   bindings <- GHC.getBindings
+  liftIO $ putStrLn $ "[INFO] bindings " ++ show (length bindings)
+  rs <- GHC.getResumeContext
+  when (length rs  > 0) $ do
+    let tys = fst . GHC.resumeBindings . head $ rs
+    liftIO $ putStrLn $ "[INFO] resume tys " ++ show (length tys)
   vals <- mapM tyThing2Val bindings
 
   return vals
@@ -287,4 +294,87 @@ getBindigVariablesNode ctxMVar isForce idStr = do
       }
 
 
-        
+-- |
+--
+--
+dapForceCommand :: MVar DAPContext -> String -> InputT G.GHCi Bool
+dapForceCommand ctx valStr = do
+
+  body <- lift $ getForceEvalBody ctx valStr
+
+  let outStr = _DAP_HEADER ++ (show body)
+  
+  liftIO $ putStrLn outStr
+
+  return False
+
+
+-- |
+--
+parseNameErrorHandler :: SomeException -> G.GHCi [GHC.Name]
+parseNameErrorHandler e = liftIO $ print e >> return []
+
+
+-- |
+--
+--
+getForceEvalBody :: MVar DAPContext -> String -> G.GHCi D.EvaluateBody
+getForceEvalBody ctxMVar nameStr =
+  gcatch (GHC.parseName nameStr) parseNameErrorHandler >>= withNames
+
+  where
+    withNames [] = return D.getDefaultEvaluateBody {
+                            D.resultEvaluateBody = "Not in scope: " ++ nameStr
+                          , D.typeEvaluateBody   = "force error."
+                          , D.variablesReferenceEvaluateBody = 0
+                          }
+    withNames (n:[]) = GHC.lookupName n >>= \case
+      Just ty -> withTyThing ty
+      Nothing -> return D.getDefaultEvaluateBody {
+                          D.resultEvaluateBody = "variable not found. " ++ nameStr
+                        , D.typeEvaluateBody   = "force error."
+                        , D.variablesReferenceEvaluateBody = 0
+                        }
+    withNames _ = return D.getDefaultEvaluateBody {
+                           D.resultEvaluateBody = "ambiguous name" ++ nameStr
+                         , D.typeEvaluateBody   = "force error."
+                         , D.variablesReferenceEvaluateBody = 0
+                         }
+
+    withTyThing t@(AnId i) = do
+      let isForce = True
+      GHC.obtainTermFromId maxBound isForce i >>= withTerm i
+
+    withTyThing x = return D.getDefaultEvaluateBody {
+                            D.resultEvaluateBody = "unsupported tything. " ++ showSDocUnsafe (ppr x)
+                          , D.typeEvaluateBody   = "force error."
+                          , D.variablesReferenceEvaluateBody = 0
+                          }
+
+    -- |
+    --  Term https://hackage.haskell.org/package/ghc-8.2.1/docs/RtClosureInspect.html
+    --
+    withTerm :: GHC.Id -> Term -> G.GHCi D.EvaluateBody
+    withTerm _ t@(Term ty _ _ subTerms) = do
+      -- liftIO $ putStrLn $ "[DEBUG]" ++ "   subTerms. [" ++ show (length subTerms) ++ "]"
+      termSDoc <- gcatch (showTerm t) showTermErrorHandler
+      let typeStr = showSDocUnsafe (pprTypeForUser ty)
+          valStr  = showSDocUnsafe termSDoc
+
+      nextIdx <- getNextIdx ctxMVar t nameStr
+      valStr' <- if 0 == nextIdx then return valStr
+                   else  getDataConstructor t
+      return D.getDefaultEvaluateBody {
+               D.resultEvaluateBody = valStr'
+             , D.typeEvaluateBody   = typeStr
+             , D.variablesReferenceEvaluateBody = nextIdx
+             }
+    withTerm i _ = do
+      idSDoc <- pprTypeAndContents i
+      let (_, typeStr, valStr) = getNameTypeValue (showSDocUnsafe idSDoc)
+      return D.getDefaultEvaluateBody {
+               D.resultEvaluateBody = valStr
+             , D.typeEvaluateBody  = typeStr
+             , D.variablesReferenceEvaluateBody = 0
+             }
+
