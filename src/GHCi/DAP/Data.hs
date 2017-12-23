@@ -18,8 +18,8 @@ data Variable =
   , indexedVariablesVariable   :: Maybe Int -- The number of indexed child variables. The client can use this optional information to present the children in a paged UI and fetch them in chunks.
   } deriving (Show, Read, Eq)
 
-getDefaultVariable :: Variable
-getDefaultVariable = Variable {
+defaultVariable :: Variable
+defaultVariable = Variable {
     nameVariable = ""
   , valueVariable = ""
   , typeVariable = ""
@@ -87,8 +87,8 @@ data EvaluateBody =
 
 -- |
 --
-getDefaultEvaluateBody :: EvaluateBody
-getDefaultEvaluateBody = EvaluateBody {
+defaultEvaluateBody :: EvaluateBody
+defaultEvaluateBody = EvaluateBody {
     resultEvaluateBody = ""
   , typeEvaluateBody   = ""
   , presentationHintEvaluateBody   = Nothing
@@ -97,3 +97,35 @@ getDefaultEvaluateBody = EvaluateBody {
   , indexedVariablesEvaluateBody   = Nothing
   }
 
+
+-- |
+--   SResponse to 'scopes' request.
+--
+data ScopesBody =
+  ScopesBody {
+    scopesScopesBody :: [Scope]  -- The scopes of the stackframe. If the array has length zero, there are no scopes available.
+  } deriving (Show, Read, Eq)
+
+
+-- |
+--   A Scope is a named container for variables. Optionally a scope can map to a source or a range within a source. 
+--
+data Scope =
+  Scope {
+    nameScope               :: String     -- Name of the scope such as 'Arguments', 'Locals'. 
+  , variablesReferenceScope :: Int        -- The variables of this scope can be retrieved by passing the value of variablesReference to the VariablesRequest.
+  , namedVariablesScope     :: Maybe Int  -- The number of named variables in this scope. The client can use this optional information to present the variables in a paged UI and fetch them in chunks.
+  , indexedVariablesScope   :: Maybe Int  -- The number of indexed variables in this scope. The client can use this optional information to present the variables in a paged UI and fetch them in chunks.
+  , expensiveScope          :: Bool       -- If true, the number of variables in this scope is large or expensive to retrieve.
+  } deriving (Show, Read, Eq)
+
+-- |
+--
+defaultScope :: Scope
+defaultScope = Scope {
+    nameScope = ""
+  , variablesReferenceScope = 0
+  , namedVariablesScope = Nothing
+  , indexedVariablesScope = Nothing
+  , expensiveScope = False
+  }

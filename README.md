@@ -8,7 +8,7 @@ currently this project is experimental.
 
 * supporting ghc-8.0.2
 * need stack project.
-* checked on windows and linux.
+* checked on windows.
 
 ## Features
 
@@ -18,7 +18,7 @@ currently this project is experimental.
 
 ## Install
 
-install vscode and phoityne extension.
+install vscode and [phoityne](https://marketplace.visualstudio.com/items?itemName=phoityne.phoityne-vscode) extension.
 
 ### Run stack install
 
@@ -28,6 +28,9 @@ install vscode and phoityne extension.
     %
     % stack install
       . . . . .
+    Copied executables to C:\Users\[username]\AppData\Roaming\local\bin:
+    - haskell-dap.exe
+
     %
 
 ## Configuration
