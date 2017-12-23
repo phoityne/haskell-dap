@@ -1,5 +1,5 @@
 
-module GHCi.DAP.Data where
+module GHCi.DAP.IFData where
 
   
 -- |
@@ -13,9 +13,9 @@ data Variable =
   , typeVariable               :: String  -- The type of the variable's value. Typically shown in the UI when hovering over the value.
   , presentationHintVariable   :: Maybe VariablePresentationHint -- Properties of a variable that can be used to determine how to render the variable in the UI.
   , evaluateNameVariable       :: Maybe String  -- Optional evaluatable name of this variable which can be passed to the 'EvaluateRequest' to fetch the variable's value.
-  , variablesReferenceVariable :: Int     -- If variablesReference is > 0, the variable is structured and its children can be retrieved by passing variablesReference to the VariablesRequest.
+  , variablesReferenceVariable :: Int           -- If variablesReference is > 0, the variable is structured and its children can be retrieved by passing variablesReference to the VariablesRequest.
   , namedVariablesVariable     :: Maybe Int     -- The number of named child variables.
-  , indexedVariablesVariable   :: Maybe Int -- The number of indexed child variables. The client can use this optional information to present the children in a paged UI and fetch them in chunks.
+  , indexedVariablesVariable   :: Maybe Int     -- The number of indexed child variables. The client can use this optional information to present the children in a paged UI and fetch them in chunks.
   } deriving (Show, Read, Eq)
 
 defaultVariable :: Variable

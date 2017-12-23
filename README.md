@@ -6,9 +6,9 @@ The goal is "let GHCi speak [DAP](https://code.visualstudio.com/docs/extensions/
 ## Limitation
 currently this project is experimental.
 
-* supporting ghc-8.0.2
+* supporting ghc-8.0.2, ghc-8.2.2
 * need stack project.
-* checked on windows.
+* checked on windows7, centos7
 
 ## Features
 
@@ -43,13 +43,13 @@ Add these options.
 
 ### windows
 
-    "ghciCmd": "stack ghci --test --no-load --no-build --main-is TARGET --ghci-options -fprint-evld-with-show --with-ghc=C:/Users/[username]/AppData/Roaming/Local/bin/haskell-dap --ghc-options -BC:/Users/[username]/AppData/Local/Programs/stack/x86_64-windows/ghc-8.0.2/lib",
+    "ghciCmd": "stack ghci --test --no-load --no-build --main-is TARGET --ghci-options -fprint-evld-with-show --with-ghc=C:/Users/[USERNAME]/AppData/Roaming/Local/bin/haskell-dap --ghc-options -BC:/Users/[USERNAME]/AppData/Local/Programs/stack/x86_64-windows/ghc-[VERSION]/lib",
 
 
 ### linux
 
 
-    "ghciCmd": "stack ghci --test --no-load --no-build --main-is TARGET --ghci-options -fprint-evld-with-show --with-ghc=/home/[username]/.local/bin/haskell-dap --ghc-options -B/home/[username]/.stack/programs/x86_64-linux/ghc-8.0.2/lib/ghc-8.0.2",
+    "ghciCmd": "stack ghci --test --no-load --no-build --main-is TARGET --ghci-options -fprint-evld-with-show --with-ghc=/home/[USERNAME]/.local/bin/haskell-dap --ghc-options -B/home/[USERNAME]/.stack/programs/x86_64-linux/ghc-[VERSION]/lib/[VERSION]",
   
 
 

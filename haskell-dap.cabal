@@ -14,23 +14,36 @@ build-type:            Simple
 cabal-version:         >=1.10
 extra-source-files:    README.md
                      , Changelog.md
-                     , cbits/HsVersions.h
-                     , cbits/PosixSource.h
+                     , src-c-8.0/HsVersions.h
+                     , src-c-8.0/PosixSource.h
+                     , src-c-8.2/HsVersions.h
+                     , src-c-8.2/PosixSource.h
 
 executable haskell-dap
   default-language:    Haskell2010
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N -Wall -fno-warn-unused-do-bind -fno-warn-name-shadowing
-  if impl(ghc >= 8.0.0) && impl(ghc <= 8.1.0)
-    hs-source-dirs:      app
-                       , app-ghc-8.0.2
+  hs-source-dirs:      app
+  if impl(ghc >= 8.0.0) && impl(ghc < 8.1.0)
+    hs-source-dirs:      app-ghc-8.0
+
+  if impl(ghc >= 8.2.0) && impl(ghc < 8.3.0)
+    hs-source-dirs:      app-ghc-8.2
 
   cpp-options:         -DGHCI
   cc-options:          -fPIC
-  include-dirs:        cbits/
-  c-sources:           cbits/hschooks.c
+  if impl(ghc >= 8.0.0) && impl(ghc < 8.1.0)
+    include-dirs:        src-c-8.0/
+    c-sources:           src-c-8.0/hschooks.c
+
+  if impl(ghc >= 8.2.0) && impl(ghc < 8.3.0)
+    include-dirs:        src-c-8.2/
+    c-sources:           src-c-8.2/hschooks.c
 
   main-is:             Main.hs
   other-modules:       Paths_haskell_dap
+                     , Haskell.DAP.GHCi.Constant
+                     , Haskell.DAP.GHCi.Type
+                     , Haskell.DAP.GHCi.Utility
                      , Haskell.DAP.GHCi.Command
                      , GHCMain
                      , GHCi.UI
@@ -64,7 +77,7 @@ executable haskell-dap
 
 library
   hs-source-dirs:      src
-  exposed-modules:     GHCi.DAP.Data
+  exposed-modules:     GHCi.DAP.IFData
   build-depends:       base >= 4.7 && < 5
   default-language:    Haskell2010
 

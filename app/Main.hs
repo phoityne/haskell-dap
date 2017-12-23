@@ -7,6 +7,7 @@ import qualified GHCMain as G
 import qualified GHCi.UI as G
 import Control.Concurrent
 import Haskell.DAP.GHCi.Command
+import Haskell.DAP.GHCi.Type
 
 
 
@@ -15,7 +16,7 @@ import Haskell.DAP.GHCi.Command
 --
 main :: IO ()
 main = do
-  putStrLn "[INFO] start haskell-dap."
+  putStrLn "[DAP][INFO] start haskell-dap."
 
   mvarCtx <- newMVar defaultDAPContext
 

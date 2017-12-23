@@ -1,4 +1,4 @@
-{-# LANGUAGE LambdaCase          #-}
+{-# LANGUAGE LambdaCase #-}
 
 module Haskell.DAP.GHCi.Command where
 
@@ -10,60 +10,26 @@ import Debugger
 import Exception
 import FastString
 import DataCon
-import TyCoRep
 import DynFlags
+import RtClosureInspect
 import qualified GHCi.UI.Monad as G
+
 import Control.DeepSeq (deepseq)
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Class
 import Control.Concurrent
 import Control.Monad
+
 import Data.Char
+import qualified Data.Map as M
 
 import System.Console.Haskeline
-import RtClosureInspect
-import qualified Data.Map as M
-import qualified GHCi.DAP.Data as D
 
--- |
---
-type EvalString = String
+import qualified GHCi.DAP.IFData as D
+import Haskell.DAP.GHCi.Type
+import Haskell.DAP.GHCi.Constant
+import Haskell.DAP.GHCi.Utility
 
--- |
---
-data DAPContext = DAPContext {
-    variableReferenceMapDAPContext :: M.Map String (Term, EvalString)
-  , bindingDAPContext :: [GHC.TyThing]
-  , frameIdDAPContext :: Int
-  }
-
--- |
---
-defaultDAPContext = DAPContext {
-    variableReferenceMapDAPContext = M.fromList []
-  , bindingDAPContext = []
-  , frameIdDAPContext = 0
-  }
-
--- |
---
-initVariableReferenceMapDAP :: MVar DAPContext -> IO ()
-initVariableReferenceMapDAP ctxMVar = do
-  ctx <- takeMVar ctxMVar
-  putMVar ctxMVar $ ctx {variableReferenceMapDAPContext = M.empty}
-
-
--- |
---
-addTerm2VariableReferenceMap :: MVar DAPContext -> Term -> String -> IO Int
-addTerm2VariableReferenceMap ctxMVar t str = do
-  ctx <- takeMVar ctxMVar
-  let curMap = variableReferenceMapDAPContext ctx
-      nextId = (M.size curMap) + 2
-
-  putMVar ctxMVar $ ctx {variableReferenceMapDAPContext = M.insert (show nextId) (t, str) curMap}
-
-  return nextId
 
 -- |
 --
@@ -82,18 +48,22 @@ dapCommands ctx = map mkCmd [
                               , G.cmdCompletionFunc = c
                               }
 
+
+------------------------------------------------------------------------------------------------
+--  DAP Command :dao-echo
+------------------------------------------------------------------------------------------------
+
 -- |
 --
 dapEcho :: String -> InputT G.GHCi Bool
 dapEcho str = do
-  liftIO $ putStrLn $ "[INFO] dap-echo \"" ++ str ++ "\""
+  liftIO $ putStrLn $ "[DAP][INFO] dap-echo \"" ++ str ++ "\""
   return False
 
--- |
---
-_DAP_HEADER :: String
-_DAP_HEADER = "<<DAP>>"
 
+------------------------------------------------------------------------------------------------
+--  DAP Command :dao-history
+------------------------------------------------------------------------------------------------
 
 -- |
 --
@@ -102,17 +72,19 @@ dapHistoryCommand ctxMVar _ = do
   ctx <- liftIO $ takeMVar ctxMVar
   liftIO $ putMVar ctxMVar ctx {frameIdDAPContext = 0}
 
-  let outStr = _DAP_HEADER ++ " frame id creared."
+  let outStr = _DAP_HEADER ++ " frame id cleared."
   
   liftIO $ putStrLn outStr
 
   return False
 
 
+------------------------------------------------------------------------------------------------
+--  DAP Command :dao-bindings
+------------------------------------------------------------------------------------------------
+
 -- |
 --
---  let outStr = _DAP_HEADER ++ "{\"seq\":9,\"type\":\"response\",\"request_seq\":12,\"success\":true,\"command\":\"variables\",\"message\":\"\",\"body\":{\"variables\":[{\"name\":\"foo\",\"type\":\"Foo\",\"value\":\"Hoge aaa 2017\",\"evaluateName\":\"foo\",\"variablesReference\":0},{\"name\":\"_result\",\"type\":\"IO ()\",\"value\":\"_\",\"evaluateName\":\"_result\",\"variablesReference\":0}]}}"
---  let outStr = _DAP_HEADER ++ "[Variable {nameVariable = \"foo\", typeVariable = \"Foo\", valueVariable = \"Hoge aaa 2017\", evaluateNameVariable = Just \"foo\", variablesReferenceVariable = 0},Variable {nameVariable = \"_result\", typeVariable = \"IO ()\", valueVariable = \"_\", evaluateNameVariable = Just \"_result\", variablesReferenceVariable = 0}]"
 --
 dapBindingsCommand :: MVar DAPContext -> String -> InputT G.GHCi Bool
 dapBindingsCommand ctxMVar idxStr = do
@@ -140,7 +112,7 @@ getBindigVariables ctx idStr
 getBindigVariablesRoot :: MVar DAPContext -> G.GHCi [D.Variable]
 getBindigVariablesRoot ctxMVar = do
   bindings <- liftIO $ bindingDAPContext <$> readMVar ctxMVar
-  liftIO $ putStrLn $ "[INFO] bindings " ++ show (length bindings)
+  liftIO $ putStrLn $ "[DAP][INFO] bindings " ++ show (length bindings)
 
   vals <- mapM tyThing2Val bindings
 
@@ -150,7 +122,7 @@ getBindigVariablesRoot ctxMVar = do
     -- |
     --  TyThings https://hackage.haskell.org/package/ghc-8.2.1/docs/HscTypes.html#t:TyThing
     --
-    tyThing2Val ty@(AnId i) = do
+    tyThing2Val (AnId i) = do
       let isForce = False
       GHC.obtainTermFromId maxBound isForce i >>= withTerm i
     tyThing2Val x = do
@@ -169,23 +141,18 @@ getBindigVariablesRoot ctxMVar = do
     withTerm ::  GHC.Id -> Term -> G.GHCi D.Variable
     withTerm i t@(Term ty _ _ subTerms) = do
       dflags <- getDynFlags
-      liftIO $ putStrLn $ "[DEBUG]" ++ "   subTerms. [" ++ show (length subTerms) ++ "]"
+      liftIO $ putStrLn $ "[DAP][DEBUG]" ++ "   subTerms. [" ++ show (length subTerms) ++ "]"
       termSDoc <- gcatch (showTerm t) showTermErrorHandler
       let nameStr = showSDoc dflags (ppr i)
           typeStr = showSDoc dflags (pprTypeForUser ty)
           valStr  = showSDoc dflags termSDoc
 
-      -- nextIdx <- getNextIdx ctxMVar t nameStr
-      -- valStr' <- if 0 == nextIdx then return valStr
-      --             else  getDataConstructor t
       return D.defaultVariable {
         D.nameVariable  = nameStr
       , D.typeVariable  = typeStr
-      -- , D.valueVariable = valStr'
       , D.valueVariable = valStr
       , D.evaluateNameVariable = Just nameStr
       , D.variablesReferenceVariable = 0
-      -- , D.variablesReferenceVariable = nextIdx
       }
     withTerm i _ = do
       dflags <- getDynFlags
@@ -212,6 +179,21 @@ getNextIdx ctxMVar t@(Term ty _ _ subTerms) str = getDynFlags >>= withDynFlags
       | "String" == showSDoc dflags (pprTypeForUser ty) = return 0
       | otherwise = liftIO $ addTerm2VariableReferenceMap ctxMVar t str
 
+getNextIdx ctxMVar t str = liftIO $ addTerm2VariableReferenceMap ctxMVar t str
+
+
+-- |
+--
+addTerm2VariableReferenceMap :: MVar DAPContext -> Term -> String -> IO Int
+addTerm2VariableReferenceMap ctxMVar t str = do
+  ctx <- takeMVar ctxMVar
+  let curMap = variableReferenceMapDAPContext ctx
+      nextId = (M.size curMap) + 2
+
+  putMVar ctxMVar $ ctx {variableReferenceMapDAPContext = M.insert (show nextId) (t, str) curMap}
+
+  return nextId
+
 
 -- |
 --
@@ -223,16 +205,7 @@ getDataConstructor (Term _ (Right dc) _ _) = do
       conStr' = if ":" == conStr then "List" else conStr
       typeStr = showSDoc dflags (pprTypeForUser (dataConRepType dc))
   return $ conStr' ++ " :: " ++ typeStr
-
-
--- |
---
-getDataConstructor (Term ty _ _ _) = do
-  dflags <- getDynFlags
-  return $ showSDoc dflags (pprTypeForUser ty)
 getDataConstructor _ = return "[getDataConstructor] not supported type."
-
-
 
 -- |
 --
@@ -251,14 +224,6 @@ getNameTypeValue str = (strip nameStr, strip typeStr, strip valueStr)
     valueStr  = if elem "->" (words typeStr) then "function :: " ++ typeStr
                   else valueStr_
 
-
--- |
---
-lstrip, rstrip, strip :: String -> String
-lstrip = dropWhile (== ' ')
-rstrip = reverse . lstrip . reverse
-strip  = lstrip . rstrip
-
 -- |
 --
 getBindigVariablesNode :: MVar DAPContext -> String -> G.GHCi [D.Variable]
@@ -267,25 +232,25 @@ getBindigVariablesNode ctxMVar idStr = do
   case M.lookup idStr (variableReferenceMapDAPContext ctx) of
     Just (t, str)  -> withTerm t str
     Nothing -> do
-      liftIO $ putStrLn $ "[CRITICAL] id not found. " ++ idStr
+      liftIO $ putStrLn $ "[DAP][CRITICAL] id not found. " ++ idStr
       return []
 
   where
-    withTerm (Term ty (Right dc) val subTerms) str = do
+    withTerm (Term _ (Right dc) _ subTerms) str = do
       let labels = if 0 == length (dataConFieldLabels dc)
                      then map (\i->"_" ++ show i) [1..(length subTerms)]
                      else map (unpackFS . flLabel) (dataConFieldLabels dc)
       mapM (withSubTerm str) $ zip labels subTerms
 
-    withTerm (Term ty (Left _) val subTerms) str = do
+    withTerm (Term _ (Left _) _ subTerms) str = do
       let labels = map (\i->"_" ++ show i) [1..(length subTerms)]
       mapM (withSubTerm str) $ zip labels subTerms
 
     withTerm _ _ = do
-      liftIO $ putStrLn $ "[CRITICAL] invalid map term type. " ++ idStr
+      liftIO $ putStrLn $ "[DAP][CRITICAL] invalid map term type. " ++ idStr
       return []
 
-    withSubTerm evalStr (label, t@(Term ty dc val subTerms)) = do
+    withSubTerm evalStr (label, t@(Term ty _ _ _)) = do
       -- liftIO $ putStrLn $ "[DEBUG]" ++ "   subTerms. [" ++ show (length subTerms) ++ "]"
       termSDoc <- gcatch (showTerm t) showTermErrorHandler
       dflags <- getDynFlags
@@ -304,9 +269,8 @@ getBindigVariablesNode ctxMVar idStr = do
       , D.evaluateNameVariable = Just evalStr
       , D.variablesReferenceVariable = nextIdx
       }
-    withSubTerm evalStr (label, t@(Prim ty val)) = do
+    withSubTerm evalStr (label, (Prim ty val)) = do
       dflags <- getDynFlags
-      termSDoc <- gcatch (showTerm t) showTermErrorHandler
       return D.defaultVariable {
         D.nameVariable  = label
       , D.typeVariable  = showSDoc dflags (pprTypeForUser ty)
@@ -314,7 +278,7 @@ getBindigVariablesNode ctxMVar idStr = do
       , D.evaluateNameVariable = Just evalStr
       , D.variablesReferenceVariable = 0
       }
-    withSubTerm evalStr (label, (Suspension ct ty val bt)) = do
+    withSubTerm evalStr (label, (Suspension _ ty _ _)) = do
       dflags <- getDynFlags
       return D.defaultVariable {
         D.nameVariable  = label
@@ -332,6 +296,11 @@ getBindigVariablesNode ctxMVar idStr = do
       , D.variablesReferenceVariable = 0
       }
 
+
+
+------------------------------------------------------------------------------------------------
+--  DAP Command :dao-force
+------------------------------------------------------------------------------------------------
 
 -- |
 --
@@ -380,7 +349,7 @@ getForceEvalBody ctxMVar nameStr =
                          , D.variablesReferenceEvaluateBody = 0
                          }
 
-    withTyThing t@(AnId i) = do
+    withTyThing (AnId i) = do
       let isForce = True
       GHC.obtainTermFromId maxBound isForce i >>= withTerm i
 
@@ -396,7 +365,7 @@ getForceEvalBody ctxMVar nameStr =
     --  Term https://hackage.haskell.org/package/ghc-8.2.1/docs/RtClosureInspect.html
     --
     withTerm :: GHC.Id -> Term -> G.GHCi D.EvaluateBody
-    withTerm _ t@(Term ty _ _ subTerms) = do
+    withTerm _ t@(Term ty _ _ _) = do
       dflags <- getDynFlags
       termSDoc <- gcatch (showTerm t) showTermErrorHandler
       let typeStr = showSDoc dflags (pprTypeForUser ty)
@@ -421,6 +390,10 @@ getForceEvalBody ctxMVar nameStr =
              }
 
 
+------------------------------------------------------------------------------------------------
+--  DAP Command :dao-scopes
+------------------------------------------------------------------------------------------------
+
 -- |
 --
 dapScopesCommand :: MVar DAPContext -> String -> InputT G.GHCi Bool
@@ -437,23 +410,17 @@ dapScopesCommand ctx idxStr = do
 
 -- |
 --
-_GHCi_SCOPE :: String
-_GHCi_SCOPE = "GHCi Scope"
-
-
--- |
---
 getScopesBody :: MVar DAPContext -> String -> G.GHCi D.ScopesBody
 getScopesBody ctxMVar frameIdStr 
   | all isDigit frameIdStr = do
-    liftIO $ putStrLn $ "[getScopesBody] frame id." ++ frameIdStr
+    liftIO $ putStrLn $ "[DAP][getScopesBody] frame id." ++ frameIdStr
     oldIdx <- liftIO $ frameIdDAPContext <$> readMVar ctxMVar
     let curIdx  = read frameIdStr
         moveIdx = curIdx - oldIdx
 
     tyThings <- withMoveIdx moveIdx
 
-    liftIO $ putStrLn $ "[getScopesBody] tyThings count." ++ show (length tyThings)
+    liftIO $ putStrLn $ "[DAP][getScopesBody] tyThings count." ++ show (length tyThings)
     ctx <- liftIO $ takeMVar ctxMVar
     liftIO $ putMVar ctxMVar ctx {
        variableReferenceMapDAPContext = M.empty
@@ -473,7 +440,7 @@ getScopesBody ctxMVar frameIdStr
         ]
       }
   | otherwise = do
-    liftIO $ putStrLn $ "[getScopesBody] invalid frame id." ++ frameIdStr
+    liftIO $ putStrLn $ "[DAP][getScopesBody] invalid frame id." ++ frameIdStr
     return D.ScopesBody {
       D.scopesScopesBody = [D.defaultScope{D.nameScope = "invalid frame id." ++ frameIdStr}]
     }
@@ -520,7 +487,7 @@ getScopesBody ctxMVar frameIdStr
       Just ty -> return (ty : acc)
       Nothing ->  do
         dflags <- getDynFlags
-        liftIO $ putStrLn $ "[DEBUG] variable not found. " ++ showSDoc dflags (ppr n)
+        liftIO $ putStrLn $ "[DAP][DEBUG] variable not found. " ++ showSDoc dflags (ppr n)
         return acc
     
   
