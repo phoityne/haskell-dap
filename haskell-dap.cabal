@@ -82,17 +82,3 @@ library
   default-language:    Haskell2010
 
 
-test-suite haskell-dap-test
-  type:                exitcode-stdio-1.0
-  hs-source-dirs:      test
-  main-is:             Spec.hs
-  ghc-options:         -Wall -fno-warn-unused-do-bind -fno-warn-name-shadowing
-  other-modules:       Haskell.DAP.ControlSpec
-  build-depends:       base
-                     , hspec
-                     , bytestring
-                     , data-default
-                     , haskell-dap
-  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
-  default-language:    Haskell2010
-
