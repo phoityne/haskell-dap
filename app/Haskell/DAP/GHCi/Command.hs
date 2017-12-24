@@ -89,13 +89,23 @@ dapHistoryCommand ctxMVar _ = do
 dapBindingsCommand :: MVar DAPContext -> String -> InputT G.GHCi Bool
 dapBindingsCommand ctxMVar idxStr = do
 
-  vals <- lift $ getBindigVariables ctxMVar idxStr
+  body <- lift $ getVariablesBody ctxMVar idxStr
 
-  let outStr = _DAP_HEADER ++ (show vals)
+  let outStr = _DAP_HEADER ++ (show body)
   
   liftIO $ putStrLn outStr
 
   return False
+
+
+-- |
+--
+getVariablesBody :: MVar DAPContext -> String -> G.GHCi D.VariablesBody
+getVariablesBody ctxMVar idxStr = do
+
+  vals <- getBindigVariables ctxMVar idxStr
+
+  return $ D.VariablesBody vals
 
 
 -- |
@@ -106,7 +116,6 @@ getBindigVariables ctx idStr
   | otherwise    = getBindigVariablesNode ctx idStr 
 
 
-
 -- |
 --
 getBindigVariablesRoot :: MVar DAPContext -> G.GHCi [D.Variable]
@@ -114,9 +123,7 @@ getBindigVariablesRoot ctxMVar = do
   bindings <- liftIO $ bindingDAPContext <$> readMVar ctxMVar
   liftIO $ putStrLn $ "[DAP][INFO] bindings " ++ show (length bindings)
 
-  vals <- mapM tyThing2Val bindings
-
-  return vals
+  mapM tyThing2Val bindings
 
   where
     -- |

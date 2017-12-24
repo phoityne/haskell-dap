@@ -1,7 +1,17 @@
 
 module GHCi.DAP.IFData where
 
-  
+
+
+-- |
+--    Response to "variables" request. 
+--
+data VariablesBody =
+  VariablesBody {
+    variablesVariablesBody :: [Variable]  -- All (or a range) of variables for the given variable reference.
+  } deriving (Show, Read, Eq)
+
+
 -- |
 --   A Variable is a name/value pair.
 --   If the value is structured (has children), a handle is provided to retrieve the children with the VariablesRequest.
