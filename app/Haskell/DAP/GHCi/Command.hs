@@ -121,7 +121,7 @@ getBindigVariables ctx idStr
 getBindigVariablesRoot :: MVar DAPContext -> G.GHCi [D.Variable]
 getBindigVariablesRoot ctxMVar = do
   bindings <- liftIO $ bindingDAPContext <$> readMVar ctxMVar
-  liftIO $ putStrLn $ "[DAP][INFO] bindings " ++ show (length bindings)
+  -- liftIO $ putStrLn $ "[DAP][INFO] bindings " ++ show (length bindings)
 
   mapM tyThing2Val bindings
 
@@ -146,9 +146,9 @@ getBindigVariablesRoot ctxMVar = do
     --  Term https://hackage.haskell.org/package/ghc-8.2.1/docs/RtClosureInspect.html
     --
     withTerm ::  GHC.Id -> Term -> G.GHCi D.Variable
-    withTerm i t@(Term ty _ _ subTerms) = do
+    withTerm i t@(Term ty _ _ _) = do
       dflags <- getDynFlags
-      liftIO $ putStrLn $ "[DAP][DEBUG]" ++ "   subTerms. [" ++ show (length subTerms) ++ "]"
+      -- liftIO $ putStrLn $ "[DAP][DEBUG]" ++ "   subTerms. [" ++ show (length subTerms) ++ "]"
       termSDoc <- gcatch (showTerm t) showTermErrorHandler
       let nameStr = showSDoc dflags (ppr i)
           typeStr = showSDoc dflags (pprTypeForUser ty)
@@ -239,7 +239,7 @@ getBindigVariablesNode ctxMVar idStr = do
   case M.lookup idStr (variableReferenceMapDAPContext ctx) of
     Just (t, str)  -> withTerm t str
     Nothing -> do
-      liftIO $ putStrLn $ "[DAP][CRITICAL] id not found. " ++ idStr
+      liftIO $ putStrLn $ "[DAP][ERROR][getBindigVariablesNode] id not found. " ++ idStr
       return []
 
   where
@@ -254,7 +254,7 @@ getBindigVariablesNode ctxMVar idStr = do
       mapM (withSubTerm str) $ zip labels subTerms
 
     withTerm _ _ = do
-      liftIO $ putStrLn $ "[DAP][CRITICAL] invalid map term type. " ++ idStr
+      liftIO $ putStrLn $ "[DAP][ERROR][getBindigVariablesNode] invalid map term type. " ++ idStr
       return []
 
     withSubTerm evalStr (label, t@(Term ty _ _ _)) = do
@@ -420,14 +420,14 @@ dapScopesCommand ctx idxStr = do
 getScopesBody :: MVar DAPContext -> String -> G.GHCi D.ScopesBody
 getScopesBody ctxMVar frameIdStr 
   | all isDigit frameIdStr = do
-    liftIO $ putStrLn $ "[DAP][getScopesBody] frame id." ++ frameIdStr
+    -- liftIO $ putStrLn $ "[DAP][getScopesBody] frame id." ++ frameIdStr
     oldIdx <- liftIO $ frameIdDAPContext <$> readMVar ctxMVar
     let curIdx  = read frameIdStr
         moveIdx = curIdx - oldIdx
 
     tyThings <- withMoveIdx moveIdx
 
-    liftIO $ putStrLn $ "[DAP][getScopesBody] tyThings count." ++ show (length tyThings)
+    -- liftIO $ putStrLn $ "[DAP][getScopesBody] tyThings count." ++ show (length tyThings)
     ctx <- liftIO $ takeMVar ctxMVar
     liftIO $ putMVar ctxMVar ctx {
        variableReferenceMapDAPContext = M.empty
@@ -447,7 +447,7 @@ getScopesBody ctxMVar frameIdStr
         ]
       }
   | otherwise = do
-    liftIO $ putStrLn $ "[DAP][getScopesBody] invalid frame id." ++ frameIdStr
+    liftIO $ putStrLn $ "[DAP][ERROR][getScopesBody] invalid frame id." ++ frameIdStr
     return D.ScopesBody {
       D.scopesScopesBody = [D.defaultScope{D.nameScope = "invalid frame id." ++ frameIdStr}]
     }
@@ -494,7 +494,7 @@ getScopesBody ctxMVar frameIdStr
       Just ty -> return (ty : acc)
       Nothing ->  do
         dflags <- getDynFlags
-        liftIO $ putStrLn $ "[DAP][DEBUG] variable not found. " ++ showSDoc dflags (ppr n)
+        liftIO $ putStrLn $ "[DAP][ERROR][getScopesBody] variable not found. " ++ showSDoc dflags (ppr n)
         return acc
     
   
