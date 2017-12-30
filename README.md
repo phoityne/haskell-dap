@@ -11,7 +11,7 @@ The goal is "let GHCi speak [DAP](https://code.visualstudio.com/docs/extensions/
 
 
 ## Limitation
-Currently this project is experimental.
+Currently this project is an experimental design and implementation.
 
 * supporting ghc-8.0.2, ghc-8.2.2
 * need stack project.
