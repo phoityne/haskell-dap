@@ -8,7 +8,7 @@ license:               BSD3
 license-file:          LICENSE
 author:                phoityne_hs
 maintainer:            phoityne.hs@gmail.com
-copyright:             2018 phoityne_hs
+copyright:             2017-2018 phoityne_hs
 category:              Development
 build-type:            Simple
 cabal-version:         >=1.10

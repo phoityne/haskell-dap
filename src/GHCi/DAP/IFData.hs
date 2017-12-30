@@ -2,7 +2,7 @@
 {-|
 Module      : GHCi.DAP.IFData
 Description : Implementation of DAP interface data type.
-Copyright   : 2018 phoityne_hs
+Copyright   : 2017-2018 phoityne_hs
 License     : BSD3
 
 Implementation of DAP interface data type.

@@ -3,8 +3,15 @@
 
 The goal is "let GHCi speak [DAP](https://code.visualstudio.com/docs/extensions/example-debuggers)".
 
+## Information
+
+* [2017/12/31] Release haskel-dap-0.0.1.0.  
+* Release Summary
+  * [INFO] Initial release.
+
+
 ## Limitation
-currently this project is experimental.
+Currently this project is experimental.
 
 * supporting ghc-8.0.2, ghc-8.2.2
 * need stack project.
@@ -22,13 +29,9 @@ install vscode and [phoityne](https://marketplace.visualstudio.com/items?itemNam
 
 ### Run stack install
 
-    % git clone https://github.com/phoityne/haskell-dap
-    %
-    % cd haskell-dap
-    %
-    % stack install
+    % stack install haskell-dap
       . . . . .
-    Copied executables to C:\Users\[username]\AppData\Roaming\local\bin:
+    Copied executables to C:\Users\[USERNAME]\AppData\Roaming\local\bin:
     - haskell-dap.exe
 
     %
@@ -43,13 +46,13 @@ Add these options.
 
 ### windows
 
-    "ghciCmd": "stack ghci --test --no-load --no-build --main-is TARGET --ghci-options -fprint-evld-with-show --with-ghc=C:/Users/[USERNAME]/AppData/Roaming/Local/bin/haskell-dap --ghc-options -BC:/Users/[USERNAME]/AppData/Local/Programs/stack/x86_64-windows/ghc-[VERSION]/lib",
+    "ghciCmd": "stack ghci --with-ghc=C:/Users/[USERNAME]/AppData/Roaming/Local/bin/haskell-dap --ghc-options -BC:/Users/[USERNAME]/AppData/Local/Programs/stack/x86_64-windows/ghc-[VERSION]/lib --test --no-load --no-build --main-is TARGET --ghci-options -fprint-evld-with-show ",
 
 
 ### linux
 
 
-    "ghciCmd": "stack ghci --test --no-load --no-build --main-is TARGET --ghci-options -fprint-evld-with-show --with-ghc=/home/[USERNAME]/.local/bin/haskell-dap --ghc-options -B/home/[USERNAME]/.stack/programs/x86_64-linux/ghc-[VERSION]/lib/[VERSION]",
+    "ghciCmd": "stack ghci --with-ghc=/home/[USERNAME]/.local/bin/haskell-dap --ghc-options -B/home/[USERNAME]/.stack/programs/x86_64-linux/ghc-[VERSION]/lib/[VERSION] --test --no-load --no-build --main-is TARGET --ghci-options -fprint-evld-with-show",
   
 
 
