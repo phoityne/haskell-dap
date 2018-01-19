@@ -73,6 +73,8 @@ import Data.Char
 import Data.List
 import Data.Maybe
 
+import qualified GHC.Paths
+
 -----------------------------------------------------------------------------
 -- ToDo:
 
@@ -108,7 +110,7 @@ ghcMain setting = do
     argv0 <- getArgs
 
     let (minusB_args, argv1) = partition ("-B" `isPrefixOf`) argv0
-        mbMinusB | null minusB_args = Nothing
+        mbMinusB | null minusB_args = Just GHC.Paths.libdir
                  | otherwise = Just (drop 2 (last minusB_args))
 
     let argv1' = map (mkGeneralLocated "on the commandline") argv1

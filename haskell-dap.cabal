@@ -1,5 +1,5 @@
 name:                  haskell-dap
-version:               0.0.1.0
+version:               0.0.2.0
 synopsis:              haskell-dap is a GHCi having DAP interface.
 description:           Please see README.md
 homepage:              https://github.com/phoityne/haskell-dap
@@ -53,6 +53,7 @@ executable haskell-dap
   build-depends:       base
                      , ghc
                      , ghci
+                     , ghc-paths
                      , transformers
                      , containers
                      , time

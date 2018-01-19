@@ -5,9 +5,8 @@ The goal is "let GHCi speak [DAP](https://code.visualstudio.com/docs/extensions/
 
 ## Information
 
-* [2017/12/31] Release haskel-dap-0.0.1.0.  
-* Release Summary
-  * [INFO] Initial release.
+* [2018/01/21] Release haskel-dap-0.0.2.0.  
+  * [MODIFY] using GHC.Paths module to set libdir.
 
 
 ## Limitation
@@ -38,22 +37,12 @@ install vscode and [phoityne](https://marketplace.visualstudio.com/items?itemNam
 
 ## Configuration
 
-Set ghciCmd variable in the launch.json.  
-Add these options.
-+ --with-ghc
-+ --ghc-options -B
-  
-
-### windows
-
-    "ghciCmd": "stack ghci --with-ghc=C:/Users/[USERNAME]/AppData/Roaming/Local/bin/haskell-dap --ghc-options -BC:/Users/[USERNAME]/AppData/Local/Programs/stack/x86_64-windows/ghc-[VERSION]/lib --test --no-load --no-build --main-is TARGET --ghci-options -fprint-evld-with-show ",
+Add `--with-ghc` option to `ghciCmd` variable in the launch.json.  
 
 
-### linux
+    "ghciCmd": "stack ghci --with-ghc=haskell-dap --test --no-load --no-build --main-is TARGET --ghci-options -fprint-evld-with-show ",
 
 
-    "ghciCmd": "stack ghci --with-ghc=/home/[USERNAME]/.local/bin/haskell-dap --ghc-options -B/home/[USERNAME]/.stack/programs/x86_64-linux/ghc-[VERSION]/lib/[VERSION] --test --no-load --no-build --main-is TARGET --ghci-options -fprint-evld-with-show",
-  
 
 
 
