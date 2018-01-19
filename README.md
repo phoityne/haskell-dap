@@ -37,7 +37,7 @@ install vscode and [phoityne](https://marketplace.visualstudio.com/items?itemNam
 
 ## Configuration
 
-Add `--with-ghc` option to `ghciCmd` variable in the launch.json.  
+Add `--with-ghc` option to `ghciCmd` variable in the vscode launch.json.  
 
 
     "ghciCmd": "stack ghci --with-ghc=haskell-dap --test --no-load --no-build --main-is TARGET --ghci-options -fprint-evld-with-show ",
