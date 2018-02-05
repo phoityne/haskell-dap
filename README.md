@@ -3,6 +3,8 @@
 
 The goal is "let GHCi speak [DAP](https://code.visualstudio.com/docs/extensions/example-debuggers)".
 
+![goal.png](https://raw.githubusercontent.com/phoityne/haskell-dap/master/docs/goal.png)  
+
 ## Information
 
 * [2018/01/21] Release haskel-dap-0.0.2.0.  
