@@ -7,6 +7,7 @@ _DAP_HEADER :: String
 _DAP_HEADER = "<<DAP>>"
 
 
+
 -- |
 --
 _GHCi_SCOPE :: String

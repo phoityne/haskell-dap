@@ -1,5 +1,5 @@
 name:                  haskell-dap
-version:               0.0.2.0
+version:               0.0.3.0
 synopsis:              haskell-dap is a GHCi having DAP interface.
 description:           Please see README.md
 homepage:              https://github.com/phoityne/haskell-dap
@@ -66,6 +66,7 @@ executable haskell-dap
                      , bytestring
                      , deepseq
                      , haskell-dap
+                     , text
   if os(windows)
     build-depends:
       Win32

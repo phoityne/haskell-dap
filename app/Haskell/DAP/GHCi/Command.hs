@@ -12,6 +12,8 @@ import FastString
 import DataCon
 import DynFlags
 import RtClosureInspect
+import Data.List
+import qualified GHCi.UI as G
 import qualified GHCi.UI.Monad as G
 
 import Control.DeepSeq (deepseq)
@@ -20,8 +22,8 @@ import Control.Monad.Trans.Class
 import Control.Concurrent
 import Control.Monad
 
-import Data.Char
 import qualified Data.Map as M
+import qualified Data.List as L
 
 import System.Console.Haskeline
 
@@ -31,15 +33,20 @@ import Haskell.DAP.GHCi.Constant
 import Haskell.DAP.GHCi.Utility
 
 
+
 -- |
 --
 dapCommands :: MVar DAPContext -> [G.Command]
 dapCommands ctx = map mkCmd [
-    ("dap-echo",     dapEcho,                noCompletion)
-  , ("dap-bindings", dapBindingsCommand ctx, noCompletion)
-  , ("dap-force",    dapForceCommand ctx,    noCompletion)
-  , ("dap-scopes",   dapScopesCommand ctx,   noCompletion)
-  , ("dap-history",  dapHistoryCommand ctx,  noCompletion)
+    ("dap-echo",            dapEcho,                      noCompletion)
+  --, ("dap-force",           dapForceCommand ctx,          noCompletion)
+  , ("dap-scopes",          dapScopesCommand ctx,         noCompletion)
+  , ("dap-history",         dapHistoryCommand ctx,        noCompletion)
+  , ("dap-set-breakpoints", dapSetBreakpointsCommand ctx, noCompletion)
+  , ("dap-continue",        dapContinueCommand ctx,       noCompletion)
+  , ("dap-stacktrace",      dapStackTraceCommand ctx,     noCompletion)
+  , ("dap-variables",       dapVariablesCommand ctx,      noCompletion)
+  , ("dap-evaluate",        dapEvaluateCommand ctx,       noCompletion)
   ]
   where
     mkCmd (n,a,c) = G.Command { G.cmdName = n
@@ -80,46 +87,373 @@ dapHistoryCommand ctxMVar _ = do
 
 
 ------------------------------------------------------------------------------------------------
---  DAP Command :dap-bindings
+--  DAP Command :dap-scopes
 ------------------------------------------------------------------------------------------------
 
 -- |
 --
---
-dapBindingsCommand :: MVar DAPContext -> String -> InputT G.GHCi Bool
-dapBindingsCommand ctxMVar idxStr = do
+dapScopesCommand :: MVar DAPContext -> String -> InputT G.GHCi Bool
+dapScopesCommand ctxMVar argsStr = do
+  res <- withArgs (readDAP argsStr) 
+  lift $ printDAP res
+  return False
 
-  body <- lift $ getVariablesBody ctxMVar idxStr
+  where
+    withArgs (Left err) = return $ Left $ "[DAP][ERROR] " ++  err ++ " : " ++ argsStr
+    withArgs (Right args) = do
+      let idx  = D.frameIdScopesArguments args
+      lift $ getScopesBody idx
 
-  let outStr = _DAP_HEADER ++ (show body)
+    -- |
+    --
+    getScopesBody :: Int -> G.GHCi (Either String D.ScopesBody)
+    getScopesBody curIdx = do
+      -- liftIO $ putStrLn $ "[DAP][getScopesBody] frame id." ++ frameIdStr
+      oldIdx <- liftIO $ frameIdDAPContext <$> readMVar ctxMVar
+      let moveIdx = curIdx - oldIdx
+
+      tyThings <- withMoveIdx moveIdx
+
+      -- liftIO $ putStrLn $ "[DAP][getScopesBody] tyThings count." ++ show (length tyThings)
+      ctx <- liftIO $ takeMVar ctxMVar
+      liftIO $ putMVar ctxMVar ctx {
+        variableReferenceMapDAPContext = M.empty
+        , bindingDAPContext = tyThings
+        , frameIdDAPContext = curIdx
+        }
+    
+      return $ Right D.ScopesBody {
+        D.scopesScopesBody = [
+          D.defaultScope{
+              D.nameScope = _GHCi_SCOPE
+            , D.variablesReferenceScope = 1
+            , D.namedVariablesScope = Nothing
+            , D.indexedVariablesScope = Nothing
+            , D.expensiveScope = False
+            }
+          ]
+        }
+
+    -- |
+    --
+    withMoveIdx moveIdx
+      | 0 == moveIdx = GHC.getBindings
+      | 0 < moveIdx = back moveIdx
+      | otherwise = forward moveIdx
   
-  liftIO $ putStrLn outStr
+    -- |
+    --
+    back num = do
+      (names, _, _, _) <- GHC.back num
+      st <- G.getGHCiState
+      enqueueCommands [G.stop st]
+
+      foldM withName [] $ reverse names
+
+    -- |
+    --
+    forward num = do
+      (names, _, _, _) <- GHC.forward num
+      st <- G.getGHCiState
+      enqueueCommands [G.stop st]
+
+      foldM withName [] $ reverse names
+           
+    -- |
+    --
+    enqueueCommands :: [String] -> G.GHCi ()
+    enqueueCommands cmds = do
+      -- make sure we force any exceptions in the commands while we're
+      -- still inside the exception handler, otherwise bad things will
+      -- happen (see #10501)
+      cmds `deepseq` return ()
+      G.modifyGHCiState $ \st -> st{ G.cmdqueue = cmds ++ G.cmdqueue st }
+
+    -- |
+    --
+    withName acc n = GHC.lookupName n >>= \case
+      Just ty -> return (ty : acc)
+      Nothing ->  do
+        dflags <- getDynFlags
+        liftIO $ putStrLn $ "[DAP][ERROR][getScopesBody] variable not found. " ++ showSDoc dflags (ppr n)
+        return acc
+
+      
+------------------------------------------------------------------------------------------------
+--  DAP Command :dap-set-breakpoints
+------------------------------------------------------------------------------------------------
+
+-- |
+--
+dapSetBreakpointsCommand :: MVar DAPContext -> String -> InputT G.GHCi Bool
+dapSetBreakpointsCommand ctxMVar argsStr = do
+  res <- withArgs (readDAP argsStr) 
+  lift $ printDAP res
+  return False
+
+  where
+    withArgs (Left err) = return $ Left $ "[DAP][ERROR] " ++  err ++ " : " ++ argsStr
+    withArgs (Right args) = do
+      let srcBPs  = D.sourceSetBreakpointsArguments args
+          srcPath = D.pathSource srcBPs
+      delSrcBreakpintsInFile ctxMVar srcPath
+
+      modSums <- G.getLoadedModules
+      let modPaths = map takeModPath modSums
+
+      case filter (isPathMatch srcPath) modPaths of
+        ((m, p):[]) -> do
+          liftIO $ putStrLn $ "[DAP][INFO][dapBreakCommand] " ++ p ++ " -> " ++ m
+          withMod args m
+        _ -> return $ Left $ "[DAP][ERROR] loaded module can not find from path. <" ++ srcPath ++ "> " ++  show modPaths
+
+    takeModPath ms = (GHC.moduleNameString (GHC.ms_mod_name ms), GHC.ms_hspp_file ms)
+
+    isPathMatch srcPath (_, p) = (nzPath srcPath) == (nzPath p)
+
+    withMod args mod = do
+      let srcBPs = D.breakpointsSetBreakpointsArguments args
+      addBps <- mapM (go mod) srcBPs
+
+      liftIO $ mapM_ updateBreakpointTypeMap addBps
+
+      return $ Right $ D.SetBreakpointsResponseBody addBps
+    
+    go mod srcBP = do
+      curSt <- G.getGHCiState
+      let curCount = G.break_ctr curSt
+          lineNo   = show $ D.lineSourceBreakpoint srcBP
+          colNo    = maybe "" show $ D.columnSourceBreakpoint srcBP
+          argStr   = mod ++ " " ++ lineNo ++ " " ++ colNo
+
+      lift $ G.breakCmd argStr
+      
+      newSt <- G.getGHCiState
+      let newCount = G.break_ctr newSt
+          isAdded = (newCount == curCount + 1)
+          locMay  =  if isAdded then Just (head (G.breaks newSt)) else Nothing
+      
+      withBreakLoc locMay
+      
+    withBreakLoc (Just (no, bpLoc))= withSrcSpan no bpLoc (G.breakLoc bpLoc)
+    withBreakLoc Nothing = return D.defaultBreakpoint {
+        D.verifiedBreakpoint = False
+      , D.messageBreakpoint  = "[DAP][ERROR]set breakpoint seems to be failed."
+      }
+
+    withSrcSpan no bpLoc (GHC.RealSrcSpan dat) = return
+      D.defaultBreakpoint {
+        D.idBreakpoint        = Just no
+      , D.verifiedBreakpoint  = True
+      , D.sourceBreakpoint    = D.defaultSource {
+          D.nameSource             = (Just . GHC.moduleNameString . GHC.moduleName . G.breakModule) bpLoc
+        , D.pathSource             = (unpackFS . GHC.srcSpanFile) dat
+        , D.sourceReferenceSource  = Nothing
+        , D.origineSource          = Nothing
+        }
+      , D.lineBreakpoint      = GHC.srcSpanStartLine dat
+      , D.columnBreakpoint    = GHC.srcSpanStartCol dat
+      , D.endLineBreakpoint   = GHC.srcSpanEndLine dat
+      , D.endColumnBreakpoint = GHC.srcSpanEndCol dat
+      }
+
+    withSrcSpan _ _ (GHC.UnhelpfulSpan _) = return D.defaultBreakpoint {
+        D.verifiedBreakpoint = False
+      , D.messageBreakpoint  = "[DAP][ERROR] UnhelpfulSpan breakpoint."
+      }
+
+    updateBreakpointTypeMap bp = case D.idBreakpoint bp of
+      Nothing -> return ()
+      Just no -> do
+        -- D.verifiedBreakpoint should be False.
+        ctx <- takeMVar ctxMVar
+        let bpMap = bpTypeMapDAPContext ctx
+            newMap = M.insert no SourceBreakpoint bpMap
+        
+        putMVar ctxMVar ctx {bpTypeMapDAPContext = newMap}
+    
+
+-- |
+--
+delSrcBreakpintsInFile :: MVar DAPContext -> String -> InputT G.GHCi Bool
+delSrcBreakpintsInFile ctxMVar path = deleteBreakpintsInFile ctxMVar path SourceBreakpoint
+
+-- |
+--
+delFuncBreakpintsInFile :: MVar DAPContext -> String -> InputT G.GHCi Bool
+delFuncBreakpintsInFile ctxMVar path = deleteBreakpintsInFile ctxMVar path FunctionBreakpoint
+
+-- |
+--   delete all breakpoint in the file.
+--
+deleteBreakpintsInFile :: MVar DAPContext -> String -> BreakpointType -> InputT G.GHCi Bool
+deleteBreakpintsInFile  ctxMVar path bpTye = do
+  bpMap <- liftIO $ bpTypeMapDAPContext <$> readMVar ctxMVar
+  st <- G.getGHCiState
+  let fileBpNOs = map fst $ filter (byFile path) $ G.breaks st
+      srcBpNOs  = M.keys $ M.filter ((==) bpTye) bpMap
+      delBpNOs  = intersect fileBpNOs srcBpNOs
+
+  mapM_ callDelete delBpNOs
 
   return False
 
+  where
+    byFile path (_, bs) = withSrcSpan path $ G.breakLoc bs
+    
+    withSrcSpan path (GHC.RealSrcSpan dat) = nzPath path == (nzPath . unpackFS . GHC.srcSpanFile) dat
+    withSrcSpan _    (GHC.UnhelpfulSpan _) = False
+    
+    callDelete bpNo = do
+      let bpNoStr = show bpNo
+      liftIO $ putStrLn $ "[DAP][INFO] delete breakpoint " ++ bpNoStr
+      lift $  G.deleteCmd bpNoStr
+
+
+------------------------------------------------------------------------------------------------
+--  DAP Command :dap-continue
+------------------------------------------------------------------------------------------------
 
 -- |
 --
-getVariablesBody :: MVar DAPContext -> String -> G.GHCi D.VariablesBody
-getVariablesBody ctxMVar idxStr = do
+dapContinueCommand :: MVar DAPContext -> String -> InputT G.GHCi Bool
+dapContinueCommand _ argsStr = do
+  withArgs (readDAP argsStr) >>= \case
+    res@(Left _) -> lift $ printDAP res
+    _ -> return ()
 
-  vals <- getBindigVariables ctxMVar idxStr
+  return False
+  
+  where
+    withArgs :: Either String D.ContinueArguments ->  InputT G.GHCi (Either String D.StoppedEventBody)
+    withArgs (Left err) = return $ Left $ "[DAP][ERROR] " ++  err ++ " : " ++ argsStr
+    withArgs (Right args) = do
+      let expr = maybe "" id $ D.exprContinueArguments args
+      -- currently, thread id staticaly 0.
+      -- DAP result is show in traceCmd. hacked.
+      lift $ G.traceCmd expr
 
-  return $ D.VariablesBody vals
+      return $ Right D.defaultStoppedEventBody
+
+
+------------------------------------------------------------------------------------------------
+--  DAP Command :dap-stacktrace
+------------------------------------------------------------------------------------------------
+
+-- |
+-- 
+_MAX_STACK_TRACE_SIZE :: Int
+_MAX_STACK_TRACE_SIZE = 50
 
 
 -- |
 --
-getBindigVariables :: MVar DAPContext -> String -> G.GHCi [D.Variable]
-getBindigVariables ctx idStr 
-  | "1" == idStr = getBindigVariablesRoot ctx 
-  | otherwise    = getBindigVariablesNode ctx idStr 
+dapStackTraceCommand :: MVar DAPContext -> String -> InputT G.GHCi Bool
+dapStackTraceCommand _ argsStr = do
+  res <- withArgs (readDAP argsStr) 
+  lift $ printDAP res
+  return False
+  
+  where
+    withArgs :: Either String D.StackTraceArguments ->  InputT G.GHCi (Either String D.StackTraceBody)
+    withArgs (Left err) = return $ Left $ "[DAP][ERROR] " ++  err ++ " : " ++ argsStr
+    withArgs (Right _) = GHC.getResumeContext >>= \case
+      [] -> return $ Left "no stacktrace found."
+      (r:_) -> withResume r
+
+    withResume r = do
+      let start  = resume2stackframe r
+      hists <- mapM resumeHist2stackFrame $ GHC.resumeHistory r
+      
+      let traces = start : hists
+
+      return $ Right D.defaultStackTraceBody {
+          D.stackFramesStackTraceBody = traces
+        , D.totalFramesStackTraceBody = length traces
+        }
+
+    resume2stackframe r = D.defaultStackFrame {
+        D.idStackFrame = 0
+      , D.nameStackFrame = (getStackFrameTitle r)
+      , D.sourceStackFrame = D.defaultSource {
+          D.pathSource = getSrcPath (GHC.resumeSpan r)
+        }
+      , D.lineStackFrame = getStartLinet (GHC.resumeSpan r)
+      , D.columnStackFrame = getStartCol (GHC.resumeSpan r)
+      , D.endLineStackFrame = getEndLinet (GHC.resumeSpan r)
+      , D.endColumnStackFrame = getEndCol (GHC.resumeSpan r)
+      }
+      
+    getStackFrameTitle r =  maybe "unknown" (GHC.moduleNameString  . GHC.moduleName . GHC.breakInfo_module) (GHC.resumeBreakInfo r)
+                         ++ "."
+                         ++ GHC.resumeDecl r
+
+    getSrcPath (GHC.RealSrcSpan dat) = (unpackFS . GHC.srcSpanFile) dat
+    getSrcPath (GHC.UnhelpfulSpan _) = "UnhelpfulSpan"
+
+    getStartLinet (GHC.RealSrcSpan dat) = GHC.srcSpanStartLine dat
+    getStartLinet (GHC.UnhelpfulSpan _) = 0
+
+    getStartCol (GHC.RealSrcSpan dat) = GHC.srcSpanStartCol dat
+    getStartCol (GHC.UnhelpfulSpan _) = 0
+
+    getEndLinet (GHC.RealSrcSpan dat) = GHC.srcSpanEndLine dat
+    getEndLinet (GHC.UnhelpfulSpan _) = 0
+
+    getEndCol (GHC.RealSrcSpan dat) = GHC.srcSpanEndCol dat
+    getEndCol (GHC.UnhelpfulSpan _) = 0
+
+    resumeHist2stackFrame hist = do
+      span <- GHC.getHistorySpan hist
+      return D.defaultStackFrame {
+        D.idStackFrame = 0
+      , D.nameStackFrame = L.intercalate ":" (GHC.historyEnclosingDecls hist)
+      , D.sourceStackFrame = D.defaultSource {
+          D.pathSource = getSrcPath span
+        }
+      , D.lineStackFrame = getStartLinet span
+      , D.columnStackFrame = getStartCol span
+      , D.endLineStackFrame = getEndLinet span
+      , D.endColumnStackFrame = getEndCol span
+      }
+    
+
+
+------------------------------------------------------------------------------------------------
+--  DAP Command :dap-variables
+------------------------------------------------------------------------------------------------
+
+-- |
+--
+dapVariablesCommand :: MVar DAPContext -> String -> InputT G.GHCi Bool
+dapVariablesCommand ctxMVar argsStr = do
+  res <- withArgs (readDAP argsStr) 
+  lift $ printDAP res
+  return False
+
+  where
+    withArgs :: Either String D.VariablesArguments -> InputT G.GHCi (Either String D.VariablesBody)
+    withArgs (Left err) = return $ Left $ "[DAP][ERROR] " ++  err ++ " : " ++ argsStr
+    withArgs (Right args) = do
+      let idx  = D.variablesReferenceVariablesArguments args
+
+      vals <- lift $ getBindingVariables ctxMVar idx
+
+      return $ Right $ D.VariablesBody vals
 
 
 -- |
 --
-getBindigVariablesRoot :: MVar DAPContext -> G.GHCi [D.Variable]
-getBindigVariablesRoot ctxMVar = do
+getBindingVariables :: MVar DAPContext -> Int -> G.GHCi [D.Variable]
+getBindingVariables ctx idx
+  | 1 == idx = getBindingVariablesRoot ctx 
+  | otherwise  = getBindingVariablesNode ctx idx
+
+
+-- |
+--
+getBindingVariablesRoot :: MVar DAPContext -> G.GHCi [D.Variable]
+getBindingVariablesRoot ctxMVar = do
   bindings <- liftIO $ bindingDAPContext <$> readMVar ctxMVar
   -- liftIO $ putStrLn $ "[DAP][INFO] bindings " ++ show (length bindings)
 
@@ -197,7 +531,7 @@ addTerm2VariableReferenceMap ctxMVar t str = do
   let curMap = variableReferenceMapDAPContext ctx
       nextId = (M.size curMap) + 2
 
-  putMVar ctxMVar $ ctx {variableReferenceMapDAPContext = M.insert (show nextId) (t, str) curMap}
+  putMVar ctxMVar $ ctx {variableReferenceMapDAPContext = M.insert nextId (t, str) curMap}
 
   return nextId
 
@@ -233,13 +567,13 @@ getNameTypeValue str = (strip nameStr, strip typeStr, strip valueStr)
 
 -- |
 --
-getBindigVariablesNode :: MVar DAPContext -> String -> G.GHCi [D.Variable]
-getBindigVariablesNode ctxMVar idStr = do
+getBindingVariablesNode :: MVar DAPContext -> Int -> G.GHCi [D.Variable]
+getBindingVariablesNode ctxMVar idx = do
   ctx <- liftIO $ readMVar ctxMVar
-  case M.lookup idStr (variableReferenceMapDAPContext ctx) of
+  case M.lookup idx (variableReferenceMapDAPContext ctx) of
     Just (t, str)  -> withTerm t str
     Nothing -> do
-      liftIO $ putStrLn $ "[DAP][ERROR][getBindigVariablesNode] id not found. " ++ idStr
+      liftIO $ putStrLn $ "[DAP][ERROR][getBindingVariablesNode] id not found. " ++ show idx
       return []
 
   where
@@ -254,7 +588,7 @@ getBindigVariablesNode ctxMVar idStr = do
       mapM (withSubTerm str) $ zip labels subTerms
 
     withTerm _ _ = do
-      liftIO $ putStrLn $ "[DAP][ERROR][getBindigVariablesNode] invalid map term type. " ++ idStr
+      liftIO $ putStrLn $ "[DAP][ERROR][getBindingVariablesNode] invalid map term type. " ++ show idx
       return []
 
     withSubTerm evalStr (label, t@(Term ty _ _ _)) = do
@@ -294,8 +628,7 @@ getBindigVariablesNode ctxMVar idStr = do
       , D.evaluateNameVariable = Just evalStr
       , D.variablesReferenceVariable = 0
       }
-    withSubTerm evalStr (label, _) = do
-      return D.defaultVariable {
+    withSubTerm evalStr (label, _) = return D.defaultVariable {
         D.nameVariable  = label
       , D.typeVariable  = "not supported subTerm."
       , D.valueVariable = "not supported subTerm."
@@ -303,25 +636,26 @@ getBindigVariablesNode ctxMVar idStr = do
       , D.variablesReferenceVariable = 0
       }
 
-
-
 ------------------------------------------------------------------------------------------------
---  DAP Command :dap-force
+--  DAP Command :dap-evaluate
 ------------------------------------------------------------------------------------------------
 
 -- |
 --
---
-dapForceCommand :: MVar DAPContext -> String -> InputT G.GHCi Bool
-dapForceCommand ctx valStr = do
-
-  body <- lift $ getForceEvalBody ctx valStr
-
-  let outStr = _DAP_HEADER ++ (show body)
-  
-  liftIO $ putStrLn outStr
-
+dapEvaluateCommand :: MVar DAPContext -> String -> InputT G.GHCi Bool
+dapEvaluateCommand ctxMVar argsStr = do
+  res <- withArgs (readDAP argsStr) 
+  lift $ printDAP res
   return False
+
+  where
+    withArgs :: Either String D.EvaluateArguments -> InputT G.GHCi (Either String D.EvaluateBody)
+    withArgs (Left err) = return $ Left $ "[DAP][ERROR] " ++  err ++ " : " ++ argsStr
+    withArgs (Right args) = case D.contextEvaluateArguments args of
+      "watch" -> do
+        body <- lift $ getForceEvalBody ctxMVar $ D.expressionEvaluateArguments args
+        return $ Right body
+      xs -> return $ Left $ "not supported evaluate context [" ++ xs ++ "]."
 
 
 -- |
@@ -396,105 +730,3 @@ getForceEvalBody ctxMVar nameStr =
              , D.variablesReferenceEvaluateBody = 0
              }
 
-
-------------------------------------------------------------------------------------------------
---  DAP Command :dap-scopes
-------------------------------------------------------------------------------------------------
-
--- |
---
-dapScopesCommand :: MVar DAPContext -> String -> InputT G.GHCi Bool
-dapScopesCommand ctx idxStr = do
-
-  vals <- lift $ getScopesBody ctx idxStr
-
-  let outStr = _DAP_HEADER ++ (show vals)
-  
-  liftIO $ putStrLn outStr
-
-  return False
-
-
--- |
---
-getScopesBody :: MVar DAPContext -> String -> G.GHCi D.ScopesBody
-getScopesBody ctxMVar frameIdStr 
-  | all isDigit frameIdStr = do
-    -- liftIO $ putStrLn $ "[DAP][getScopesBody] frame id." ++ frameIdStr
-    oldIdx <- liftIO $ frameIdDAPContext <$> readMVar ctxMVar
-    let curIdx  = read frameIdStr
-        moveIdx = curIdx - oldIdx
-
-    tyThings <- withMoveIdx moveIdx
-
-    -- liftIO $ putStrLn $ "[DAP][getScopesBody] tyThings count." ++ show (length tyThings)
-    ctx <- liftIO $ takeMVar ctxMVar
-    liftIO $ putMVar ctxMVar ctx {
-       variableReferenceMapDAPContext = M.empty
-      , bindingDAPContext = tyThings
-      , frameIdDAPContext = curIdx
-      }
-  
-    return D.ScopesBody {
-      D.scopesScopesBody = [
-        D.defaultScope{
-            D.nameScope = _GHCi_SCOPE
-          , D.variablesReferenceScope = 1
-          , D.namedVariablesScope = Nothing
-          , D.indexedVariablesScope = Nothing
-          , D.expensiveScope = False
-          }
-        ]
-      }
-  | otherwise = do
-    liftIO $ putStrLn $ "[DAP][ERROR][getScopesBody] invalid frame id." ++ frameIdStr
-    return D.ScopesBody {
-      D.scopesScopesBody = [D.defaultScope{D.nameScope = "invalid frame id." ++ frameIdStr}]
-    }
-
-  where
-    -- |
-    --
-    withMoveIdx moveIdx
-      | 0 == moveIdx = GHC.getBindings
-      | 0 < moveIdx = back moveIdx
-      | otherwise = forward moveIdx
-  
-    -- |
-    --
-    back num = do
-      (names, _, _, _) <- GHC.back num
-      st <- G.getGHCiState
-      enqueueCommands [G.stop st]
-
-      foldM withName [] $ reverse names
-
-    -- |
-    --
-    forward num = do
-      (names, _, _, _) <- GHC.forward num
-      st <- G.getGHCiState
-      enqueueCommands [G.stop st]
-
-      foldM withName [] $ reverse names
-           
-    -- |
-    --
-    enqueueCommands :: [String] -> G.GHCi ()
-    enqueueCommands cmds = do
-      -- make sure we force any exceptions in the commands while we're
-      -- still inside the exception handler, otherwise bad things will
-      -- happen (see #10501)
-      cmds `deepseq` return ()
-      G.modifyGHCiState $ \st -> st{ G.cmdqueue = cmds ++ G.cmdqueue st }
-
-    -- |
-    --
-    withName acc n = GHC.lookupName n >>= \case
-      Just ty -> return (ty : acc)
-      Nothing ->  do
-        dflags <- getDynFlags
-        liftIO $ putStrLn $ "[DAP][ERROR][getScopesBody] variable not found. " ++ showSDoc dflags (ppr n)
-        return acc
-    
-  

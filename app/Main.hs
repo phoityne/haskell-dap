@@ -9,14 +9,15 @@ import Control.Concurrent
 import Haskell.DAP.GHCi.Command
 import Haskell.DAP.GHCi.Type
 
-
+import Paths_haskell_dap (version)
+import Data.Version
 
 -- |
 --  Main
 --
 main :: IO ()
 main = do
-  putStrLn "[DAP][INFO] start haskell-dap."
+  putStrLn $ "[DAP][INFO] start haskell-dap-" ++ showVersion version ++ "."
 
   mvarCtx <- newMVar defaultDAPContext
 

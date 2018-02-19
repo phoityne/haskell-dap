@@ -13,10 +13,21 @@ type EvalString = String
 
 -- |
 --
+data BreakpointType = SourceBreakpoint | FunctionBreakpoint
+  deriving (Show, Read, Eq)
+
+-- |
+--
+type BreakpointTypeMap = M.Map Int BreakpointType
+
+
+-- |
+--
 data DAPContext = DAPContext {
-    variableReferenceMapDAPContext :: M.Map String (Term, EvalString)
+    variableReferenceMapDAPContext :: M.Map Int (Term, EvalString)
   , bindingDAPContext :: [GHC.TyThing]
   , frameIdDAPContext :: Int
+  , bpTypeMapDAPContext :: BreakpointTypeMap
   }
 
   
@@ -27,6 +38,7 @@ defaultDAPContext = DAPContext {
     variableReferenceMapDAPContext = M.fromList []
   , bindingDAPContext = []
   , frameIdDAPContext = 0
+  , bpTypeMapDAPContext = M.fromList []
   }
 
   
