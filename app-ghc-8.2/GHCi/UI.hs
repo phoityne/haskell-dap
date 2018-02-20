@@ -23,9 +23,15 @@
 module GHCi.UI (
         interactiveUI,
         GhciSettings(..),
-        defaultGhciSettings,
         ghciCommands,
-        ghciWelcomeMsg
+        ghciWelcomeMsg,
+
+        -- haskell-dap add.
+        defaultGhciSettings,
+        getLoadedModules,
+        breakCmd,
+        deleteCmd,
+        traceCmd
     ) where
 
 #include "HsVersions.h"
@@ -131,6 +137,10 @@ import qualified System.Win32
 import GHC.IO.Exception ( IOErrorType(InvalidArgument) )
 import GHC.IO.Handle ( hFlushAll )
 import GHC.TopHandler ( topHandler )
+
+
+import qualified Haskell.DAP.GHCi.Utility as DAP
+
 
 -----------------------------------------------------------------------------
 
@@ -3135,7 +3145,7 @@ stepCmd :: String -> GHCi ()
 stepCmd arg = withSandboxOnly ":step" $ step arg
   where
   step []         = doContinue (const True) GHC.SingleStep
-  step expression = runStmt expression GHC.SingleStep >> return ()
+  step expression = runStmt expression GHC.SingleStep >>= DAP.showStoppedEventBody >> return ()
 
 stepLocalCmd :: String -> GHCi ()
 stepLocalCmd arg = withSandboxOnly ":steplocal" $ step arg
@@ -3187,7 +3197,7 @@ traceCmd arg
   = withSandboxOnly ":trace" $ tr arg
   where
   tr []         = doContinue (const True) GHC.RunAndLogSteps
-  tr expression = runStmt expression GHC.RunAndLogSteps >> return ()
+  tr expression = runStmt expression GHC.RunAndLogSteps >>= DAP.showStoppedEventBody >> return ()
 
 continueCmd :: String -> GHCi ()
 continueCmd = noArgs $ withSandboxOnly ":continue" $ doContinue (const True) GHC.RunToCompletion
@@ -3196,6 +3206,7 @@ continueCmd = noArgs $ withSandboxOnly ":continue" $ doContinue (const True) GHC
 doContinue :: (SrcSpan -> Bool) -> SingleStep -> GHCi ()
 doContinue pre step = do
   runResult <- resume pre step
+  DAP.showStoppedEventBody (Just runResult)
   _ <- afterRunStmt pre runResult
   return ()
 
@@ -3769,3 +3780,4 @@ wantNameFromInterpretedModule noCanDo str and_then =
                then noCanDo n $ text "module " <> ppr modl <>
                                 text " is not interpreted"
                else and_then n
+
