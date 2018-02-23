@@ -1,4 +1,9 @@
 
+20180225 haskell-dap-0.0.3.0
+
+  * [ADD] setBreakpoint, continue, scopes, stackTrace, evaluate commands.
+
+
 20180121 haskell-dap-0.0.2.0
 
   * [MODIFY] using GHC.Paths module to set libdir.

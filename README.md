@@ -7,8 +7,8 @@ The goal is "let GHCi speak [DAP](https://code.visualstudio.com/docs/extensions/
 
 ## Information
 
-* [2018/01/21] Release haskel-dap-0.0.2.0.  
-  * [MODIFY] using GHC.Paths module to set libdir.
+* [2018/02/25] Release haskel-dap-0.0.3.0.  
+  * [ADD] setBreakpoint, continue, scopes, stackTrace, evaluate commands.
 
 
 ## Limitation
@@ -45,6 +45,10 @@ Add `--with-ghc` option to `ghciCmd` variable in the vscode launch.json.
     "ghciCmd": "stack ghci --with-ghc=haskell-dap --test --no-load --no-build --main-is TARGET --ghci-options -fprint-evld-with-show ",
 
 
+
+## IFData Design
+
+![if_data.png](https://raw.githubusercontent.com/phoityne/haskell-dap/master/docs/if_data.png)  
 
 
 
