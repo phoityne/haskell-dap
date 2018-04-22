@@ -1,4 +1,9 @@
 
+20180430 haskell-dap-0.0.4.0
+
+  * [ADD] next, stepIn, setFunctionBreakpoint commands.
+
+
 20180225 haskell-dap-0.0.3.0
 
   * [ADD] setBreakpoint, continue, scopes, stackTrace, evaluate commands.

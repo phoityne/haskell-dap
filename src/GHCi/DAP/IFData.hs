@@ -17,10 +17,18 @@ module GHCi.DAP.IFData (
   , SetBreakpointsResponseBody(..)
   , Breakpoint(..)
   , defaultBreakpoint
+    -- * setFunctionBreakpoints
+  , SetFunctionBreakpointsArguments(..)
+  , FunctionBreakpoint(..)
+  , SetFunctionBreakpointsResponseBody(..)
     -- * continue
   , ContinueArguments(..)
   , StoppedEventBody(..)
   , defaultStoppedEventBody
+    -- * next
+  , NextArguments(..)
+    -- * stepIn
+  , StepInArguments(..)
     -- * scopes
   , ScopesArguments(..)
   , ScopesBody(..)
@@ -334,6 +342,39 @@ defaultBreakpoint = Breakpoint {
   }
 
 
+------------------------------------------------------------------------------------
+
+-- |
+--   Arguments for 'setFunctionBreakpoints' request.  
+--
+data SetFunctionBreakpointsArguments =
+  SetFunctionBreakpointsArguments {
+    breakpointsSetFunctionBreakpointsArguments    :: [FunctionBreakpoint]  -- The function names of the breakpoints.
+  } deriving (Show, Read, Eq)
+
+
+-- |
+--   Properties of a breakpoint passed to the setFunctionBreakpoints request.
+--
+data FunctionBreakpoint =
+  FunctionBreakpoint {
+    nameFunctionBreakpoint         :: String        -- The name of the function. 
+  , conditionFunctionBreakpoint    :: Maybe String  -- An optional expression for conditional breakpoints.
+  , hitConditionFunctionBreakpoint :: Maybe String  -- An optional expression that controls how many hits of the breakpoint are ignored. The backend is expected to interpret the expression as needed.
+  } deriving (Show, Read, Eq)
+
+
+-- |
+--  Response to 'setFunctionBreakpoints' request.
+--  Returned is information about each breakpoint created by this request.
+--
+data SetFunctionBreakpointsResponseBody =
+  SetFunctionBreakpointsResponseBody {
+    breakpointsSetFunctionBreakpointsResponseBody :: [Breakpoint]  -- Information about the breakpoints. The array elements correspond to the elements of the 'breakpoints' array.
+  } deriving (Show, Read, Eq)
+
+  ------------------------------------------------------------------------------------
+
 -- |
 --   Arguments for 'continue' request.
 --
@@ -341,6 +382,24 @@ data ContinueArguments =
   ContinueArguments {
     threadIdContinueArguments :: Int          -- ^Continue execution for the specified thread (if possible). If the backend cannot continue on a single thread but will continue on all threads, it should set the allThreadsContinued attribute in the response to true.
   , exprContinueArguments     :: Maybe String -- ^ADD: haskell-dap
+  } deriving (Show, Read, Eq)
+
+
+-- |
+--   Arguments for 'next' request.
+--
+data NextArguments =
+  NextArguments {
+    threadIdNextArguments :: Int --  Execute 'next' for this thread. 
+  } deriving (Show, Read, Eq)
+
+
+-- |
+--   Arguments for 'stepIn' request. 
+--
+data StepInArguments =
+  StepInArguments {
+    threadIdStepInArguments :: Int --  Execute 'stepIn' for this thread.
   } deriving (Show, Read, Eq)
 
 

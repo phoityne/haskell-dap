@@ -31,7 +31,9 @@ module GHCi.UI (
         getLoadedModules,
         breakCmd,
         deleteCmd,
-        traceCmd
+        traceCmd,
+        stepCmd,
+        stepLocalCmd
     ) where
 
 #include "HsVersions.h"

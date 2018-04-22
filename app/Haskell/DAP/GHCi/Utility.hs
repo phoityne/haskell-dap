@@ -133,10 +133,11 @@ showStoppedEventBody (Just (GHC.ExecComplete { GHC.execResult = Left (SomeExcept
       outStr = _DAP_HEADER ++ showDAP body
   liftIO $ putStrLn outStr
 
-showStoppedEventBody (Just GHC.ExecBreak{}) = do
+showStoppedEventBody z@(Just GHC.ExecBreak{}) = do
   let body = Right D.defaultStoppedEventBody {
              D.reasonStoppedEventBody = "step"
            } :: Either String D.StoppedEventBody
       outStr = _DAP_HEADER ++ showDAP body
+  liftIO $ print z
   liftIO $ putStrLn outStr
 

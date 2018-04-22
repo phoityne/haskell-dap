@@ -12,7 +12,6 @@ import FastString
 import DataCon
 import DynFlags
 import RtClosureInspect
-import Data.List
 import qualified GHCi.UI as G
 import qualified GHCi.UI.Monad as G
 
@@ -43,7 +42,11 @@ dapCommands ctx = map mkCmd [
   , ("dap-scopes",          dapScopesCommand ctx,         noCompletion)
   , ("dap-history",         dapHistoryCommand ctx,        noCompletion)
   , ("dap-set-breakpoints", dapSetBreakpointsCommand ctx, noCompletion)
+  , ("dap-set-function-breakpoints"
+                  , dapSetFunctionBreakpointsCommand ctx, noCompletion)
   , ("dap-continue",        dapContinueCommand ctx,       noCompletion)
+  , ("dap-next",            dapNextCommand ctx,           noCompletion)
+  , ("dap-step-in",         dapStepInCommand ctx,         noCompletion)
   , ("dap-stacktrace",      dapStackTraceCommand ctx,     noCompletion)
   , ("dap-variables",       dapVariablesCommand ctx,      noCompletion)
   , ("dap-evaluate",        dapEvaluateCommand ctx,       noCompletion)
@@ -192,49 +195,198 @@ dapSetBreakpointsCommand ctxMVar argsStr = do
   return False
 
   where
+    -- |
+    --
     withArgs (Left err) = return $ Left $ "[DAP][ERROR] " ++  err ++ " : " ++ argsStr
-    withArgs (Right args) = do
-      let srcBPs  = D.sourceSetBreakpointsArguments args
-          srcPath = D.pathSource srcBPs
-      delSrcBreakpintsInFile ctxMVar srcPath
+    withArgs (Right args) =  deleteBreakpoints args
+                          >> addBreakpoints args
+
+    -- |
+    --
+    deleteBreakpoints args = do
+      let srcInfo = D.sourceSetBreakpointsArguments args
+          srcPath = D.pathSource srcInfo
+
+      bps <- liftIO $ getDelBPs (nzPath srcPath)
+
+      liftIO $ putStrLn $ "[DAP][INFO][dapSetBreakpointsCommand] delete src bps " ++ show bps
+
+      mapM_ (lift.delBreakpoint.show) bps
+      
+    -- |
+    --
+    getDelBPs srcPath = do
+      ctx <- takeMVar ctxMVar
+
+      let bpNOs = M.keys $ M.filter ((==) srcPath) $ srcBPsDAPContext ctx
+          newSrcBPs = M.filter ((/=) srcPath) $ srcBPsDAPContext ctx
+
+      putMVar ctxMVar $ ctx {srcBPsDAPContext = newSrcBPs} 
+
+      return bpNOs
+
+    -- |
+    --
+    addBreakpoints args = do
+      let srcInfo = D.sourceSetBreakpointsArguments args
+          srcPath = D.pathSource srcInfo
 
       modSums <- G.getLoadedModules
       let modPaths = map takeModPath modSums
 
       case filter (isPathMatch srcPath) modPaths of
         ((m, p):[]) -> do
-          liftIO $ putStrLn $ "[DAP][INFO][dapBreakCommand] " ++ p ++ " -> " ++ m
+          liftIO $ putStrLn $ "[DAP][INFO][dapSetBreakpointsCommand] " ++ p ++ " -> " ++ m
           withMod args m
         _ -> return $ Left $ "[DAP][ERROR] loaded module can not find from path. <" ++ srcPath ++ "> " ++  show modPaths
 
+    -- |
+    --
     takeModPath ms = (GHC.moduleNameString (GHC.ms_mod_name ms), GHC.ms_hspp_file ms)
 
+    -- |
+    --
     isPathMatch srcPath (_, p) = (nzPath srcPath) == (nzPath p)
 
+    -- |
+    --
     withMod args mod = do
       let srcBPs = D.breakpointsSetBreakpointsArguments args
-      addBps <- mapM (go mod) srcBPs
 
-      liftIO $ mapM_ updateBreakpointTypeMap addBps
+      addBps <- mapM (addBP mod) srcBPs
+
+      liftIO $ updateBpCtx addBps
 
       return $ Right $ D.SetBreakpointsResponseBody addBps
     
-    go mod srcBP = do
-      curSt <- G.getGHCiState
-      let curCount = G.break_ctr curSt
-          lineNo   = show $ D.lineSourceBreakpoint srcBP
+    -- |
+    --
+    addBP mod srcBP = do
+      let lineNo   = show $ D.lineSourceBreakpoint srcBP
           colNo    = maybe "" show $ D.columnSourceBreakpoint srcBP
           argStr   = mod ++ " " ++ lineNo ++ " " ++ colNo
 
-      lift $ G.breakCmd argStr
+      lift $ addBreakpoint argStr
+
+    -- |
+    --
+    updateBpCtx bps = do
+      ctx <- takeMVar ctxMVar
+      let cur = srcBPsDAPContext ctx
+          new = M.fromList $ foldr getBpNoAndPath [] bps
+      putMVar ctxMVar $ ctx{srcBPsDAPContext = (M.union cur new)}
+
+    -- |
+    --
+    getBpNoAndPath bp acc = case D.idBreakpoint bp of
+      Nothing -> acc
+      Just no -> (no, (nzPath . D.pathSource . D.sourceBreakpoint) (bp)) : acc 
+
+
+------------------------------------------------------------------------------------------------
+--  DAP Command :dap-set-function-breakpoints
+------------------------------------------------------------------------------------------------
+
+-- |
+--
+dapSetFunctionBreakpointsCommand :: MVar DAPContext -> String -> InputT G.GHCi Bool
+dapSetFunctionBreakpointsCommand ctxMVar argsStr = do
+  res <- withArgs (readDAP argsStr) 
+  lift $ printDAP res
+  return False
+
+  where
+    withArgs (Left err) = return $ Left $ "[DAP][ERROR] " ++  err ++ " : " ++ argsStr
+    withArgs (Right args) =  deleteBreakpoints
+                          >> addBreakpoints args
       
-      newSt <- G.getGHCiState
-      let newCount = G.break_ctr newSt
-          isAdded = (newCount == curCount + 1)
-          locMay  =  if isAdded then Just (head (G.breaks newSt)) else Nothing
+    -- |
+    --
+    deleteBreakpoints = do
+      bps <- liftIO $ getDelBPs
+
+      liftIO $ putStrLn $ "[DAP][INFO][dapSetFunctionBreakpointsCommand] delete func bps " ++ show bps
+
+      mapM_ (lift.delBreakpoint.show) bps
       
-      withBreakLoc locMay
-      
+    -- |
+    --
+    getDelBPs = do
+      ctx <- takeMVar ctxMVar
+
+      let bpNOs = funcBPsDAPContext ctx
+
+      putMVar ctxMVar $ ctx {funcBPsDAPContext = []} 
+
+      return bpNOs
+
+    -- |
+    --
+    addBreakpoints args = do
+      let funcBPs = D.breakpointsSetFunctionBreakpointsArguments args
+
+      addBps <- mapM addBP funcBPs
+
+      liftIO $ updateBpCtx addBps
+
+      return $ Right $ D.SetFunctionBreakpointsResponseBody addBps
+    
+    -- |
+    --
+    addBP funcBP = do
+      let argStr = D.nameFunctionBreakpoint funcBP
+
+      lift $ addBreakpoint argStr
+
+    -- |
+    --
+    updateBpCtx bps = do
+      ctx <- takeMVar ctxMVar
+      let cur = funcBPsDAPContext ctx
+          new = foldr getBpNo [] bps
+      putMVar ctxMVar $ ctx{funcBPsDAPContext = cur ++ new}
+
+    -- |
+    --
+    getBpNo bp acc = case D.idBreakpoint bp of
+      Nothing -> acc
+      Just no -> no : acc 
+
+
+------------------------------------------------------------------------------------------------
+
+-- |
+--
+delBreakpoint :: String -> G.GHCi Bool
+delBreakpoint bpNoStr = do
+  curSt <- G.getGHCiState
+  let curCount = G.break_ctr curSt
+
+  G.deleteCmd bpNoStr
+  
+  newSt <- G.getGHCiState
+  let newCount = G.break_ctr newSt
+  
+  return (newCount == curCount - 1)
+
+
+-- |
+--
+addBreakpoint :: String -> G.GHCi D.Breakpoint
+addBreakpoint argStr = do
+  curSt <- G.getGHCiState
+  let curCount = G.break_ctr curSt
+
+  G.breakCmd argStr
+  
+  newSt <- G.getGHCiState
+  let newCount = G.break_ctr newSt
+      isAdded = (newCount == curCount + 1)
+      locMay  =  if isAdded then Just (head (G.breaks newSt)) else Nothing
+  
+  withBreakLoc locMay
+
+  where
     withBreakLoc (Just (no, bpLoc))= withSrcSpan no bpLoc (G.breakLoc bpLoc)
     withBreakLoc Nothing = return D.defaultBreakpoint {
         D.verifiedBreakpoint = False
@@ -262,53 +414,6 @@ dapSetBreakpointsCommand ctxMVar argsStr = do
       , D.messageBreakpoint  = "[DAP][ERROR] UnhelpfulSpan breakpoint."
       }
 
-    updateBreakpointTypeMap bp = case D.idBreakpoint bp of
-      Nothing -> return ()
-      Just no -> do
-        -- D.verifiedBreakpoint should be False.
-        ctx <- takeMVar ctxMVar
-        let bpMap = bpTypeMapDAPContext ctx
-            newMap = M.insert no SourceBreakpoint bpMap
-        
-        putMVar ctxMVar ctx {bpTypeMapDAPContext = newMap}
-    
-
--- |
---
-delSrcBreakpintsInFile :: MVar DAPContext -> String -> InputT G.GHCi Bool
-delSrcBreakpintsInFile ctxMVar path = deleteBreakpintsInFile ctxMVar path SourceBreakpoint
-
--- |
---
-delFuncBreakpintsInFile :: MVar DAPContext -> String -> InputT G.GHCi Bool
-delFuncBreakpintsInFile ctxMVar path = deleteBreakpintsInFile ctxMVar path FunctionBreakpoint
-
--- |
---   delete all breakpoint in the file.
---
-deleteBreakpintsInFile :: MVar DAPContext -> String -> BreakpointType -> InputT G.GHCi Bool
-deleteBreakpintsInFile  ctxMVar path bpTye = do
-  bpMap <- liftIO $ bpTypeMapDAPContext <$> readMVar ctxMVar
-  st <- G.getGHCiState
-  let fileBpNOs = map fst $ filter (byFile path) $ G.breaks st
-      srcBpNOs  = M.keys $ M.filter ((==) bpTye) bpMap
-      delBpNOs  = intersect fileBpNOs srcBpNOs
-
-  mapM_ callDelete delBpNOs
-
-  return False
-
-  where
-    byFile path (_, bs) = withSrcSpan path $ G.breakLoc bs
-    
-    withSrcSpan path (GHC.RealSrcSpan dat) = nzPath path == (nzPath . unpackFS . GHC.srcSpanFile) dat
-    withSrcSpan _    (GHC.UnhelpfulSpan _) = False
-    
-    callDelete bpNo = do
-      let bpNoStr = show bpNo
-      liftIO $ putStrLn $ "[DAP][INFO] delete breakpoint " ++ bpNoStr
-      lift $  G.deleteCmd bpNoStr
-
 
 ------------------------------------------------------------------------------------------------
 --  DAP Command :dap-continue
@@ -330,8 +435,60 @@ dapContinueCommand _ argsStr = do
     withArgs (Right args) = do
       let expr = maybe "" id $ D.exprContinueArguments args
       -- currently, thread id staticaly 0.
-      -- DAP result is show in traceCmd. hacked.
+      -- DAP result is shown in traceCmd. hacked.
       lift $ G.traceCmd expr
+
+      return $ Right D.defaultStoppedEventBody
+
+
+
+------------------------------------------------------------------------------------------------
+--  DAP Command :dap-next
+------------------------------------------------------------------------------------------------
+
+-- |
+--
+dapNextCommand :: MVar DAPContext -> String -> InputT G.GHCi Bool
+dapNextCommand _ argsStr = do
+  withArgs (readDAP argsStr) >>= \case
+    res@(Left _) -> lift $ printDAP res
+    _ -> return ()
+
+  return False
+  
+  where
+    withArgs :: Either String D.NextArguments ->  InputT G.GHCi (Either String D.StoppedEventBody)
+    withArgs (Left err) = return $ Left $ "[DAP][ERROR] " ++  err ++ " : " ++ argsStr
+    withArgs (Right _) = do
+      -- currently, thread id staticaly 0.
+      -- DAP result is shown in stepLocalCmd. hacked.
+      lift $ G.stepLocalCmd ""
+
+      return $ Right D.defaultStoppedEventBody
+
+
+
+------------------------------------------------------------------------------------------------
+--  DAP Command :dap-step-in
+------------------------------------------------------------------------------------------------
+
+-- |
+--
+dapStepInCommand :: MVar DAPContext -> String -> InputT G.GHCi Bool
+dapStepInCommand _ argsStr = do
+  withArgs (readDAP argsStr) >>= \case
+    res@(Left _) -> lift $ printDAP res
+    _ -> return ()
+
+  return False
+  
+  where
+    withArgs :: Either String D.StepInArguments ->  InputT G.GHCi (Either String D.StoppedEventBody)
+    withArgs (Left err) = return $ Left $ "[DAP][ERROR] " ++  err ++ " : " ++ argsStr
+    withArgs (Right _) = do
+      -- currently, thread id staticaly 0.
+      -- DAP result is shown in stepLocalCmd. hacked.
+      lift $ G.stepCmd ""
 
       return $ Right D.defaultStoppedEventBody
 
