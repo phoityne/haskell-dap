@@ -7,8 +7,8 @@ The goal is "let GHCi speak [DAP](https://code.visualstudio.com/docs/extensions/
 
 ## Information
 
-* [2018/02/25] Release haskel-dap-0.0.3.0.  
-  * [ADD] setBreakpoint, continue, scopes, stackTrace, evaluate commands.
+* [2018/04/30] Release haskel-dap-0.0.4.0.  
+  * [ADD] next, stepIn, setFunctionBreakpoint commands.
 
 
 ## Limitation
@@ -51,4 +51,10 @@ Add `--with-ghc` option to `ghciCmd` variable in the vscode launch.json.
 ![if_data.png](https://raw.githubusercontent.com/phoityne/haskell-dap/master/docs/if_data.png)  
 
 
+## Sequences
 
+### Overview.
+![seq1.png](https://raw.githubusercontent.com/phoityne/haskell-dap/master/docs/seq1.png) 
+
+### Details.
+![seq2.png](https://raw.githubusercontent.com/phoityne/haskell-dap/master/docs/seq2.png) 
