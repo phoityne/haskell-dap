@@ -40,7 +40,7 @@ dapCommands ctx = map mkCmd [
     ("dap-echo",            dapEcho,                      noCompletion)
   --, ("dap-force",           dapForceCommand ctx,          noCompletion)
   , ("dap-scopes",          dapScopesCommand ctx,         noCompletion)
-  , ("dap-history",         dapHistoryCommand ctx,        noCompletion)
+  --, ("dap-history",         dapHistoryCommand ctx,        noCompletion)
   , ("dap-set-breakpoints", dapSetBreakpointsCommand ctx, noCompletion)
   , ("dap-set-function-breakpoints"
                   , dapSetFunctionBreakpointsCommand ctx, noCompletion)
@@ -77,6 +77,7 @@ dapEcho str = do
 
 -- |
 --
+{-
 dapHistoryCommand :: MVar DAPContext -> String -> InputT G.GHCi Bool
 dapHistoryCommand ctxMVar _ = do
   ctx <- liftIO $ takeMVar ctxMVar
@@ -87,7 +88,7 @@ dapHistoryCommand ctxMVar _ = do
   liftIO $ putStrLn outStr
 
   return False
-
+-}
 
 ------------------------------------------------------------------------------------------------
 --  DAP Command :dap-scopes
@@ -506,7 +507,11 @@ _MAX_STACK_TRACE_SIZE = 50
 -- |
 --
 dapStackTraceCommand :: MVar DAPContext -> String -> InputT G.GHCi Bool
-dapStackTraceCommand _ argsStr = do
+dapStackTraceCommand ctxMVar argsStr = do
+  
+  ctx <- liftIO $ takeMVar ctxMVar
+  liftIO $ putMVar ctxMVar ctx {frameIdDAPContext = 0}
+
   res <- withArgs (readDAP argsStr) 
   lift $ printDAP res
   return False
@@ -518,16 +523,24 @@ dapStackTraceCommand _ argsStr = do
       [] -> return $ Left "no stacktrace found."
       (r:_) -> withResume r
 
-    withResume r = do
-      let start  = resume2stackframe r
-      hists <- mapM resumeHist2stackFrame $ GHC.resumeHistory r
-      
-      let traces = start : hists
+    withResume r = case isExceptionResume r of
+      True -> do
+        traces <- mapM resumeHist2stackFrame $ GHC.resumeHistory r
 
-      return $ Right D.defaultStackTraceBody {
-          D.stackFramesStackTraceBody = traces
-        , D.totalFramesStackTraceBody = length traces
-        }
+        return $ Right D.defaultStackTraceBody {
+            D.stackFramesStackTraceBody = traces
+          , D.totalFramesStackTraceBody = length traces
+          }
+      False -> do
+        let start  = resume2stackframe r
+        hists <- mapM resumeHist2stackFrame $ GHC.resumeHistory r
+        
+        let traces = start : hists
+
+        return $ Right D.defaultStackTraceBody {
+            D.stackFramesStackTraceBody = traces
+          , D.totalFramesStackTraceBody = length traces
+          }
 
     resume2stackframe r = D.defaultStackFrame {
         D.idStackFrame = 0
@@ -705,22 +718,7 @@ getDataConstructor (Term _ (Right dc) _ _) = do
   return $ conStr' ++ " :: " ++ typeStr
 getDataConstructor _ = return "[getDataConstructor] not supported type."
 
--- |
---
-showTermErrorHandler :: SomeException -> G.GHCi SDoc
-showTermErrorHandler e = return $ text $ show e
 
-
--- |
---
-getNameTypeValue :: String -> (String, String, String)
-getNameTypeValue str = (strip nameStr, strip typeStr, strip valueStr)
-  where
-    nameStr   = takeWhile (/= ' ')  str
-    typeStr   = takeWhile (/= '=')  $ drop 4 $ dropWhile (/= ' ') str 
-    valueStr_ = tail $ dropWhile (/= '=') str
-    valueStr  = if elem "->" (words typeStr) then "function :: " ++ typeStr
-                  else valueStr_
 
 -- |
 --
@@ -814,11 +812,6 @@ dapEvaluateCommand ctxMVar argsStr = do
         return $ Right body
       xs -> return $ Left $ "not supported evaluate context [" ++ xs ++ "]."
 
-
--- |
---
-parseNameErrorHandler :: SomeException -> G.GHCi [GHC.Name]
-parseNameErrorHandler e = liftIO $ print e >> return []
 
 
 -- |

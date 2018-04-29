@@ -56,5 +56,5 @@ Add `--with-ghc` option to `ghciCmd` variable in the vscode launch.json.
 ### Overview.
 ![seq1.png](https://raw.githubusercontent.com/phoityne/haskell-dap/master/docs/seq1.png) 
 
-### Details.
+### Debugging details.
 ![seq2.png](https://raw.githubusercontent.com/phoityne/haskell-dap/master/docs/seq2.png) 
