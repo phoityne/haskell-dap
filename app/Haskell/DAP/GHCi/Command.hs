@@ -13,7 +13,7 @@ import DataCon
 import DynFlags
 import RtClosureInspect
 import qualified GHCi.UI as G
-import qualified GHCi.UI.Monad as G
+import qualified GHCi.UI.Monad as G hiding (runStmt)
 
 import Control.DeepSeq (deepseq)
 import Control.Monad.IO.Class
@@ -802,48 +802,71 @@ dapEvaluateCommand ctxMVar argsStr = do
   return False
 
   where
+    -- |
+    --
     withArgs :: Either String D.EvaluateArguments -> InputT G.GHCi (Either String D.EvaluateBody)
     withArgs (Left err) = return $ Left $ "[DAP][ERROR] " ++  err ++ " : " ++ argsStr
-    withArgs (Right args) = do
-      body <- lift $ getForceEvalBody ctxMVar $ D.expressionEvaluateArguments args
-      return $ Right body
+    withArgs (Right args) = case D.contextEvaluateArguments args of
+      "repl" -> lift $ runRepl args
+      _      -> lift $ runOther args
 
+    -- |
+    --
+    runRepl ::  D.EvaluateArguments -> G.GHCi (Either String D.EvaluateBody)
+    runRepl args
+      | null (D.expressionEvaluateArguments args) = return $ Right D.defaultEvaluateBody {
+          D.resultEvaluateBody = "no input."
+        , D.typeEvaluateBody   = "no input."
+        , D.variablesReferenceEvaluateBody = 0
+        }
+      | otherwise = do
+        let stmt = D.expressionEvaluateArguments args
+
+        G.runStmt stmt GHC.RunToCompletion >>= \case
+          Just (GHC.ExecBreak _ _) -> return $ Left $ "[DAP][ERROR] unexpected runStmt result. " ++ stmt
+          Just (GHC.ExecComplete res _) -> withReplResult stmt res
+          Nothing -> do
+            liftIO $ putStrLn "[DAP][INFO] unknown runStmt result. runOther."
+            runOther args
+    
+    -- |
+    --
+    withReplResult _ (Left msg) = return $ Left $ "[DAP][ERROR] error runStmt result. " ++ show msg
+    withReplResult stmt (Right names) = names2EvalBody ctxMVar stmt names
+
+
+    -- |
+    --
+    runOther ::  D.EvaluateArguments -> G.GHCi (Either String D.EvaluateBody)
+    runOther args = do 
+      let nameStr = D.expressionEvaluateArguments args
+      names <- gcatch (GHC.parseName nameStr) parseNameErrorHandler
+      names2EvalBody ctxMVar nameStr names
 
 -- |
 --
 --
-getForceEvalBody :: MVar DAPContext -> String -> G.GHCi D.EvaluateBody
-getForceEvalBody ctxMVar nameStr = do
-  gcatch (GHC.parseName nameStr) parseNameErrorHandler >>= withNames
+names2EvalBody :: MVar DAPContext -> String -> [GHC.Name] -> G.GHCi (Either String D.EvaluateBody)
+names2EvalBody ctxMVar key names
+  | 0 == length names = return $ Left $ "Not in scope. " ++ key
+  | 1 == length names = withName $ head names
+  | otherwise = return $ Left $ "Ambiguous name. " ++ key
 
   where
-    withNames [] = return D.defaultEvaluateBody {
-                            D.resultEvaluateBody = "Not in scope: " ++ nameStr
-                          , D.typeEvaluateBody   = "force error."
-                          , D.variablesReferenceEvaluateBody = 0
-                          }
-    withNames (n:[]) = GHC.lookupName n >>= \case
+    withName n = GHC.lookupName n >>= \case
+      Nothing -> return $ Left $ "TyThing not found. " ++ key
       Just ty -> withTyThing ty
-      Nothing -> return D.defaultEvaluateBody {
-                          D.resultEvaluateBody = "variable not found. " ++ nameStr
-                        , D.typeEvaluateBody   = "force error."
-                        , D.variablesReferenceEvaluateBody = 0
-                        }
-    withNames _ = return D.defaultEvaluateBody {
-                           D.resultEvaluateBody = "ambiguous name" ++ nameStr
-                         , D.typeEvaluateBody   = "force error."
-                         , D.variablesReferenceEvaluateBody = 0
-                         }
 
     withTyThing (AnId i) = do
       let isForce = True
-      GHC.obtainTermFromId maxBound isForce i >>= withTerm i
+      body <- GHC.obtainTermFromId maxBound isForce i >>= withTerm i
+      return $ Right body
 
     withTyThing x = do
       dflags <- getDynFlags
-      return D.defaultEvaluateBody {
-               D.resultEvaluateBody = "unsupported tything. " ++ showSDoc dflags (ppr x)
-             , D.typeEvaluateBody   = "force error."
+      return $ Right D.defaultEvaluateBody {
+               D.resultEvaluateBody = showSDoc dflags (ppr x)
+             , D.typeEvaluateBody   =showSDoc dflags (ppr x)
              , D.variablesReferenceEvaluateBody = 0
              }
 
@@ -857,7 +880,7 @@ getForceEvalBody ctxMVar nameStr = do
       let typeStr = showSDoc dflags (pprTypeForUser ty)
           valStr  = showSDoc dflags termSDoc
 
-      nextIdx <- getNextIdx ctxMVar t nameStr
+      nextIdx <- getNextIdx ctxMVar t key
       valStr' <- if 0 == nextIdx then return valStr
                    else  getDataConstructor t
       return D.defaultEvaluateBody {
@@ -865,6 +888,7 @@ getForceEvalBody ctxMVar nameStr = do
              , D.typeEvaluateBody   = typeStr
              , D.variablesReferenceEvaluateBody = nextIdx
              }
+
     withTerm _ t@(Prim ty vals) = do
       dflags <- getDynFlags
       termSDoc <- gcatch (showTerm t) showTermErrorHandler
@@ -878,18 +902,19 @@ getForceEvalBody ctxMVar nameStr = do
               , D.typeEvaluateBody   = typeStr
               , D.variablesReferenceEvaluateBody = 0
               }
+
     withTerm _ t@(Suspension clsr ty hval bound) = do
       dflags <- getDynFlags
       termSDoc <- gcatch (showTerm t) showTermErrorHandler
-      let typeStr = "Closure(" ++ show clsr ++ ")" ++ " " ++ showSDoc dflags (pprTypeForUser ty) ++ " " ++ showSDoc dflags termSDoc
-          valStr  = "Closure(" ++ show clsr ++ ")" ++ " " ++ showSDoc dflags (pprTypeForUser ty) ++ " " ++ showSDoc dflags termSDoc
+      let typeStr = "closure(" ++ show clsr ++ ")" ++ " :: " ++ showSDoc dflags (pprTypeForUser ty) ++ " # " ++ showSDoc dflags termSDoc
 
       liftIO $ putStrLn "[DAP][INFO] Suspension Not yet supported."
       return D.defaultEvaluateBody {
-                D.resultEvaluateBody = valStr
+                D.resultEvaluateBody = typeStr
               , D.typeEvaluateBody   = typeStr
               , D.variablesReferenceEvaluateBody = 0
               }
+
     withTerm _ (NewtypeWrap ty _ wt) = do
       dflags <- getDynFlags
       termSDoc <- gcatch (showTerm wt) showTermErrorHandler
@@ -902,6 +927,7 @@ getForceEvalBody ctxMVar nameStr = do
               , D.typeEvaluateBody   = typeStr
               , D.variablesReferenceEvaluateBody = 0
               }
+
     withTerm _ (RefWrap ty wt) = do
       dflags <- getDynFlags
       termSDoc <- gcatch (showTerm wt) showTermErrorHandler
@@ -914,6 +940,7 @@ getForceEvalBody ctxMVar nameStr = do
               , D.typeEvaluateBody   = typeStr
               , D.variablesReferenceEvaluateBody = 0
               }
+
     withTerm i t = do
       {-
       dflags <- getDynFlags

@@ -33,7 +33,8 @@ module GHCi.UI (
         deleteCmd,
         traceCmd,
         stepCmd,
-        stepLocalCmd
+        stepLocalCmd,
+        runStmt
     ) where
 
 #include "HsVersions.h"

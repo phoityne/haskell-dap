@@ -20,9 +20,17 @@ Currently this project is an experimental design and implementation.
 
 ## Features
 
-### inspect variables
+### inspect watch
 
 ![01_inspect_variables.gif](https://raw.githubusercontent.com/phoityne/haskell-dap/master/docs/01_inspect_variables.gif)  
+
+### inspect hoover
+
+![02_inspect_hoover.gif](https://raw.githubusercontent.com/phoityne/haskell-dap/master/docs/02_inspect_hoover.gif)  
+
+### inspect repl
+
+![03_inspect_repl.gif](https://raw.githubusercontent.com/phoityne/haskell-dap/master/docs/03_inspect_repl.gif)  
 
 ## Install
 
