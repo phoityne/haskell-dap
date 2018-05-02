@@ -30,7 +30,7 @@ import qualified GHCi.DAP.IFData as D
 import Haskell.DAP.GHCi.Type
 import Haskell.DAP.GHCi.Constant
 import Haskell.DAP.GHCi.Utility
-
+import Data.Maybe
 
 
 -- |
@@ -38,9 +38,7 @@ import Haskell.DAP.GHCi.Utility
 dapCommands :: MVar DAPContext -> [G.Command]
 dapCommands ctx = map mkCmd [
     ("dap-echo",            dapEcho,                      noCompletion)
-  --, ("dap-force",           dapForceCommand ctx,          noCompletion)
   , ("dap-scopes",          dapScopesCommand ctx,         noCompletion)
-  --, ("dap-history",         dapHistoryCommand ctx,        noCompletion)
   , ("dap-set-breakpoints", dapSetBreakpointsCommand ctx, noCompletion)
   , ("dap-set-function-breakpoints"
                   , dapSetFunctionBreakpointsCommand ctx, noCompletion)
@@ -806,19 +804,16 @@ dapEvaluateCommand ctxMVar argsStr = do
   where
     withArgs :: Either String D.EvaluateArguments -> InputT G.GHCi (Either String D.EvaluateBody)
     withArgs (Left err) = return $ Left $ "[DAP][ERROR] " ++  err ++ " : " ++ argsStr
-    withArgs (Right args) = case D.contextEvaluateArguments args of
-      "watch" -> do
-        body <- lift $ getForceEvalBody ctxMVar $ D.expressionEvaluateArguments args
-        return $ Right body
-      xs -> return $ Left $ "not supported evaluate context [" ++ xs ++ "]."
-
+    withArgs (Right args) = do
+      body <- lift $ getForceEvalBody ctxMVar $ D.expressionEvaluateArguments args
+      return $ Right body
 
 
 -- |
 --
 --
 getForceEvalBody :: MVar DAPContext -> String -> G.GHCi D.EvaluateBody
-getForceEvalBody ctxMVar nameStr =
+getForceEvalBody ctxMVar nameStr = do
   gcatch (GHC.parseName nameStr) parseNameErrorHandler >>= withNames
 
   where
@@ -870,10 +865,69 @@ getForceEvalBody ctxMVar nameStr =
              , D.typeEvaluateBody   = typeStr
              , D.variablesReferenceEvaluateBody = nextIdx
              }
-    withTerm i _ = do
+    withTerm _ t@(Prim ty vals) = do
+      dflags <- getDynFlags
+      termSDoc <- gcatch (showTerm t) showTermErrorHandler
+      let typeStr = showSDoc dflags (pprTypeForUser ty)
+          valStr  = showSDoc dflags termSDoc
+
+      liftIO $ putStrLn "[DAP][INFO] Prim Not yet supported."
+
+      return D.defaultEvaluateBody {
+                D.resultEvaluateBody = valStr
+              , D.typeEvaluateBody   = typeStr
+              , D.variablesReferenceEvaluateBody = 0
+              }
+    withTerm _ t@(Suspension clsr ty hval bound) = do
+      dflags <- getDynFlags
+      termSDoc <- gcatch (showTerm t) showTermErrorHandler
+      let typeStr = "Closure(" ++ show clsr ++ ")" ++ " " ++ showSDoc dflags (pprTypeForUser ty) ++ " " ++ showSDoc dflags termSDoc
+          valStr  = "Closure(" ++ show clsr ++ ")" ++ " " ++ showSDoc dflags (pprTypeForUser ty) ++ " " ++ showSDoc dflags termSDoc
+
+      liftIO $ putStrLn "[DAP][INFO] Suspension Not yet supported."
+      return D.defaultEvaluateBody {
+                D.resultEvaluateBody = valStr
+              , D.typeEvaluateBody   = typeStr
+              , D.variablesReferenceEvaluateBody = 0
+              }
+    withTerm _ (NewtypeWrap ty _ wt) = do
+      dflags <- getDynFlags
+      termSDoc <- gcatch (showTerm wt) showTermErrorHandler
+      let typeStr = showSDoc dflags (pprTypeForUser ty)
+          valStr  = showSDoc dflags termSDoc
+
+      liftIO $ putStrLn "[DAP][INFO] NewtypeWrap Not yet supported."
+      return D.defaultEvaluateBody {
+                D.resultEvaluateBody = valStr
+              , D.typeEvaluateBody   = typeStr
+              , D.variablesReferenceEvaluateBody = 0
+              }
+    withTerm _ (RefWrap ty wt) = do
+      dflags <- getDynFlags
+      termSDoc <- gcatch (showTerm wt) showTermErrorHandler
+      let typeStr = showSDoc dflags (pprTypeForUser ty)
+          valStr  = showSDoc dflags termSDoc
+
+      liftIO $ putStrLn "[DAP][INFO] RefWrap Not yet supported."
+      return D.defaultEvaluateBody {
+                D.resultEvaluateBody = valStr
+              , D.typeEvaluateBody   = typeStr
+              , D.variablesReferenceEvaluateBody = 0
+              }
+    withTerm i t = do
+      {-
+      dflags <- getDynFlags
+      termSDoc <- gcatch (showTerm t) showTermErrorHandler
+      let typeStr = showSDoc dflags (pprTypeForUser (termType t))
+          valStr  = showSDoc dflags termSDoc
+      -}
+
       dflags <- getDynFlags
       idSDoc <- pprTypeAndContents i
       let (_, typeStr, valStr) = getNameTypeValue (showSDoc dflags idSDoc)
+
+      liftIO $ putStrLn $ "[DAP][INFO] not supported term. "
+
       return D.defaultEvaluateBody {
                D.resultEvaluateBody = valStr
              , D.typeEvaluateBody  = typeStr
