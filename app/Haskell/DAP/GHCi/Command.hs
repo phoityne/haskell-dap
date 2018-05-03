@@ -943,25 +943,4 @@ names2EvalBody ctxMVar key names
               , D.variablesReferenceEvaluateBody = 0
               }
 
-    {-
-    withTerm i _ = do
-      {-
-      dflags <- getDynFlags
-      termSDoc <- gcatch (showTerm t) showTermErrorHandler
-      let typeStr = showSDoc dflags (pprTypeForUser (termType t))
-          valStr  = showSDoc dflags termSDoc
-      -}
-
-      dflags <- getDynFlags
-      idSDoc <- pprTypeAndContents i
-      let (_, typeStr, valStr) = getNameTypeValue (showSDoc dflags idSDoc)
-
-      liftIO $ putStrLn $ "[DAP][INFO] not supported term. "
-
-      return D.defaultEvaluateBody {
-               D.resultEvaluateBody = valStr
-             , D.typeEvaluateBody  = typeStr
-             , D.variablesReferenceEvaluateBody = 0
-             }
-             -}
 
