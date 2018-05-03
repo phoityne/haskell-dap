@@ -30,7 +30,6 @@ import qualified GHCi.DAP.IFData as D
 import Haskell.DAP.GHCi.Type
 import Haskell.DAP.GHCi.Constant
 import Haskell.DAP.GHCi.Utility
-import Data.Maybe
 
 
 -- |
@@ -823,11 +822,10 @@ dapEvaluateCommand ctxMVar argsStr = do
         let stmt = D.expressionEvaluateArguments args
 
         G.runStmt stmt GHC.RunToCompletion >>= \case
-          Just (GHC.ExecBreak _ _) -> return $ Left $ "[DAP][ERROR] unexpected runStmt result. " ++ stmt
+          Nothing -> return $ Left $ "[DAP][ERROR] error occurred while runStmt. see debug log."
+          Just (GHC.ExecBreak _ _) -> return $ Left $ "[DAP][ERROR] unexpected result ExecBreak."
           Just (GHC.ExecComplete res _) -> withReplResult stmt res
-          Nothing -> do
-            liftIO $ putStrLn "[DAP][INFO] unknown runStmt result. runOther."
-            runOther args
+
     
     -- |
     --
@@ -863,10 +861,11 @@ names2EvalBody ctxMVar key names
       return $ Right body
 
     withTyThing x = do
+      liftIO $ putStrLn "[DAP][INFO]  withTyThing x Not yet supported."
       dflags <- getDynFlags
       return $ Right D.defaultEvaluateBody {
                D.resultEvaluateBody = showSDoc dflags (ppr x)
-             , D.typeEvaluateBody   =showSDoc dflags (ppr x)
+             , D.typeEvaluateBody   = showSDoc dflags (ppr x)
              , D.variablesReferenceEvaluateBody = 0
              }
 
@@ -883,13 +882,16 @@ names2EvalBody ctxMVar key names
       nextIdx <- getNextIdx ctxMVar t key
       valStr' <- if 0 == nextIdx then return valStr
                    else  getDataConstructor t
+
+      liftIO $ putStrLn "[DAP][INFO] Term Not yet supported."
+
       return D.defaultEvaluateBody {
                D.resultEvaluateBody = valStr'
              , D.typeEvaluateBody   = typeStr
              , D.variablesReferenceEvaluateBody = nextIdx
              }
 
-    withTerm _ t@(Prim ty vals) = do
+    withTerm _ t@(Prim ty _) = do
       dflags <- getDynFlags
       termSDoc <- gcatch (showTerm t) showTermErrorHandler
       let typeStr = showSDoc dflags (pprTypeForUser ty)
@@ -903,7 +905,7 @@ names2EvalBody ctxMVar key names
               , D.variablesReferenceEvaluateBody = 0
               }
 
-    withTerm _ t@(Suspension clsr ty hval bound) = do
+    withTerm _ t@(Suspension clsr ty _ _) = do
       dflags <- getDynFlags
       termSDoc <- gcatch (showTerm t) showTermErrorHandler
       let typeStr = "closure(" ++ show clsr ++ ")" ++ " :: " ++ showSDoc dflags (pprTypeForUser ty) ++ " # " ++ showSDoc dflags termSDoc
@@ -941,7 +943,8 @@ names2EvalBody ctxMVar key names
               , D.variablesReferenceEvaluateBody = 0
               }
 
-    withTerm i t = do
+    {-
+    withTerm i _ = do
       {-
       dflags <- getDynFlags
       termSDoc <- gcatch (showTerm t) showTermErrorHandler
@@ -960,4 +963,5 @@ names2EvalBody ctxMVar key names
              , D.typeEvaluateBody  = typeStr
              , D.variablesReferenceEvaluateBody = 0
              }
+             -}
 
