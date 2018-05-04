@@ -151,6 +151,7 @@ dapScopesCommand ctxMVar argsStr = do
 
       foldM withName [] $ reverse names
 
+      
     -- |
     --
     forward num = do
@@ -420,24 +421,107 @@ addBreakpoint argStr = do
 -- |
 --
 dapContinueCommand :: MVar DAPContext -> String -> InputT G.GHCi Bool
-dapContinueCommand _ argsStr = do
-  withArgs (readDAP argsStr) >>= \case
-    res@(Left _) -> lift $ printDAP res
-    _ -> return ()
+dapContinueCommand mvarCtx argsStr = do
+  res <- withArgs (readDAP argsStr)
+  lift $ printDAP res
 
   return False
   
   where
     withArgs :: Either String D.ContinueArguments ->  InputT G.GHCi (Either String D.StoppedEventBody)
     withArgs (Left err) = return $ Left $ "[DAP][ERROR] " ++  err ++ " : " ++ argsStr
-    withArgs (Right args) = do
-      let expr = maybe "" id $ D.exprContinueArguments args
-      -- currently, thread id staticaly 0.
-      -- DAP result is shown in traceCmd. hacked.
-      lift $ G.traceCmd expr
+    withArgs (Right args) = case  D.exprContinueArguments args of
+      Just expr -> lift $ runWithStmtTrace expr
+      Nothing   -> lift $ runNoStmtTrace
 
-      return $ Right D.defaultStoppedEventBody
+    -- |
+    --
+    runWithStmtTrace expr = do
+      clearTmpDAPContext
 
+      G.traceCmd expr
+
+      ctx <- liftIO $ readMVar mvarCtx
+      withStmtTraceResults $ traceCmdExecResultDAPContext ctx
+
+
+    -- |
+    --
+    withStmtTraceResults [] = return $ Left $ "[DAP][ERROR] invalid trace arg result."
+    withStmtTraceResults (res:[]) = withStmtTraceResult res
+    withStmtTraceResults (res:_) = do
+      liftIO $ putStrLn $ "[DAP][WARN] two or more trace arg results. use first result. "
+      withStmtTraceResult res
+    
+
+    -- |
+    --
+    withStmtTraceResult (Just res) = withExecResult mvarCtx "breakpoint" res
+    withStmtTraceResult Nothing = do
+      -- runStmt expr error occurred.
+      msg <- getRunStmtSourceError
+      return $ Left $ msg
+
+
+    -- |
+    --
+    runNoStmtTrace = do
+      clearTmpDAPContext
+
+      G.traceCmd ""
+
+      ctx <- liftIO $ readMVar mvarCtx
+      withNoStmtTraceResults $ doContinueExecResultDAPContext ctx
+
+
+    -- |
+    --
+    withNoStmtTraceResults [] = return $ Left $ "[DAP][ERROR] invalid trace no arg result."
+    withNoStmtTraceResults (res:[]) = withExecResult mvarCtx "breakpoint" res
+    withNoStmtTraceResults (res:_) = do
+      liftIO $ putStrLn $ "[DAP][WARN] two or more trace no arg results. use first result. "
+      withExecResult mvarCtx "breakpoint" res
+
+
+-- |
+--
+withExecResult :: MVar DAPContext -> String-> GHC.ExecResult -> G.GHCi (Either String D.StoppedEventBody)
+withExecResult _ _ (GHC.ExecComplete { GHC.execResult = Right _ }) = do
+  return $  Right D.defaultStoppedEventBody {
+              D.reasonStoppedEventBody = "complete"
+            }
+  
+withExecResult _ _ (GHC.ExecComplete { GHC.execResult = Left (SomeException e)}) = do
+  return $  Right D.defaultStoppedEventBody {
+              D.reasonStoppedEventBody = "complete"
+            , D.descriptionStoppedEventBody = show e
+            , D.textStoppedEventBody = show e
+            }
+
+withExecResult _ reason (GHC.ExecBreak{GHC.breakInfo = Just _}) = do
+  return $   Right D.defaultStoppedEventBody {
+              D.reasonStoppedEventBody = reason
+            }
+
+withExecResult mvarCtx _ (GHC.ExecBreak{GHC.breakInfo = Nothing}) = do
+  let key = "_exception"
+  --runStmtDAP mvarCtx False key >>= \case
+  gcatch (GHC.parseName key) parseNameErrorHandler >>= names2EvalBody mvarCtx False key >>= \case
+    Left  msg  -> return $ Left $ "[DAP][ERROR] invalid _exception result." ++ msg
+    Right body -> return $ Right D.defaultStoppedEventBody {
+        D.reasonStoppedEventBody = "exception"
+      , D.descriptionStoppedEventBody = D.resultEvaluateBody body
+      , D.textStoppedEventBody = D.resultEvaluateBody body
+      }
+
+{-do
+  evalBody <- getEvalBody "_exception" True
+  return $   Right D.defaultStoppedEventBody {
+              D.reasonStoppedEventBody = "exception"
+            , D.descriptionStoppedEventBody = D.resultEvaluateBody evalBody
+            , D.textStoppedEventBody = D.resultEvaluateBody evalBody
+            }
+            -}
 
 
 ------------------------------------------------------------------------------------------------
@@ -447,23 +531,31 @@ dapContinueCommand _ argsStr = do
 -- |
 --
 dapNextCommand :: MVar DAPContext -> String -> InputT G.GHCi Bool
-dapNextCommand _ argsStr = do
-  withArgs (readDAP argsStr) >>= \case
-    res@(Left _) -> lift $ printDAP res
-    _ -> return ()
+dapNextCommand mvarCtx argsStr = do
+  res <- lift $ withArgs (readDAP argsStr)
+  lift $ printDAP res
 
   return False
-  
+
   where
-    withArgs :: Either String D.NextArguments ->  InputT G.GHCi (Either String D.StoppedEventBody)
+    withArgs :: Either String D.NextArguments -> G.GHCi (Either String D.StoppedEventBody)
     withArgs (Left err) = return $ Left $ "[DAP][ERROR] " ++  err ++ " : " ++ argsStr
     withArgs (Right _) = do
-      -- currently, thread id staticaly 0.
-      -- DAP result is shown in stepLocalCmd. hacked.
-      lift $ G.stepLocalCmd ""
+      clearTmpDAPContext
 
-      return $ Right D.defaultStoppedEventBody
+      G.stepLocalCmd ""
 
+      ctx <- liftIO $ readMVar mvarCtx
+      withResults $ doContinueExecResultDAPContext ctx
+
+
+    -- |
+    --
+    withResults [] = return $ Left $ "[DAP][ERROR] invalid stepLocalCmd result."
+    withResults (res:[]) = withExecResult mvarCtx "step" res
+    withResults (res:_) = do
+      liftIO $ putStrLn $ "[DAP][WARN] two or more stepLocalCmd results. use first result. "
+      withExecResult mvarCtx "step" res
 
 
 ------------------------------------------------------------------------------------------------
@@ -473,22 +565,31 @@ dapNextCommand _ argsStr = do
 -- |
 --
 dapStepInCommand :: MVar DAPContext -> String -> InputT G.GHCi Bool
-dapStepInCommand _ argsStr = do
-  withArgs (readDAP argsStr) >>= \case
-    res@(Left _) -> lift $ printDAP res
-    _ -> return ()
+dapStepInCommand mvarCtx argsStr = do
+  res <- lift $ withArgs (readDAP argsStr)
+  lift $ printDAP res
 
   return False
   
   where
-    withArgs :: Either String D.StepInArguments ->  InputT G.GHCi (Either String D.StoppedEventBody)
+    withArgs :: Either String D.StepInArguments -> G.GHCi (Either String D.StoppedEventBody)
     withArgs (Left err) = return $ Left $ "[DAP][ERROR] " ++  err ++ " : " ++ argsStr
     withArgs (Right _) = do
-      -- currently, thread id staticaly 0.
-      -- DAP result is shown in stepLocalCmd. hacked.
-      lift $ G.stepCmd ""
+      clearTmpDAPContext
 
-      return $ Right D.defaultStoppedEventBody
+      G.stepCmd ""
+
+      ctx <- liftIO $ readMVar mvarCtx
+      withResults $ doContinueExecResultDAPContext ctx
+
+
+    -- |
+    --
+    withResults [] = return $ Left $ "[DAP][ERROR] invalid stepCmd result."
+    withResults (res:[]) = withExecResult mvarCtx "step" res
+    withResults (res:_) = do
+      liftIO $ putStrLn $ "[DAP][WARN] two or more stepCmd results. use first result. "
+      withExecResult mvarCtx "step" res
 
 
 ------------------------------------------------------------------------------------------------
@@ -682,7 +783,7 @@ getNextIdx ctxMVar t@(Term ty _ _ subTerms) str = getDynFlags >>= withDynFlags
   where
     withDynFlags dflags 
       | 0 == length subTerms = return 0
-      | 1 == length subTerms && isPrim (head subTerms) = return 0
+      | 1 == length subTerms && isPrim (head subTerms)  = return 0
       | "[Char]" == showSDoc dflags (pprTypeForUser ty) = return 0
       | "String" == showSDoc dflags (pprTypeForUser ty) = return 0
       | otherwise = liftIO $ addTerm2VariableReferenceMap ctxMVar t str
@@ -820,17 +921,9 @@ dapEvaluateCommand ctxMVar argsStr = do
         }
       | otherwise = do
         let stmt = D.expressionEvaluateArguments args
+            isRefable = True
 
-        G.runStmt stmt GHC.RunToCompletion >>= \case
-          Nothing -> return $ Left $ "[DAP][ERROR] error occurred while runStmt. see debug log."
-          Just (GHC.ExecBreak _ _) -> return $ Left $ "[DAP][ERROR] unexpected result ExecBreak."
-          Just (GHC.ExecComplete res _) -> withReplResult stmt res
-
-    
-    -- |
-    --
-    withReplResult _ (Left msg) = return $ Left $ "[DAP][ERROR] error runStmt result. " ++ show msg
-    withReplResult stmt (Right names) = names2EvalBody ctxMVar stmt names
+        runStmtDAP ctxMVar isRefable stmt
 
 
     -- |
@@ -839,13 +932,27 @@ dapEvaluateCommand ctxMVar argsStr = do
     runOther args = do 
       let nameStr = D.expressionEvaluateArguments args
       names <- gcatch (GHC.parseName nameStr) parseNameErrorHandler
-      names2EvalBody ctxMVar nameStr names
+      names2EvalBody ctxMVar True nameStr names
+
+
+-- |
+--
+runStmtDAP :: MVar DAPContext -> Bool -> String -> G.GHCi (Either String D.EvaluateBody)
+runStmtDAP ctxMVar isRefable stmt = do
+  clearTmpDAPContext
+
+  G.runStmt stmt GHC.RunToCompletion >>= \case
+    Nothing -> Left <$> getRunStmtSourceError
+    Just (GHC.ExecBreak _ _) -> return $ Left $ "[DAP][ERROR] unexpected result ExecBreak."
+    Just (GHC.ExecComplete (Left msg) _) -> return $ Left $ "[DAP][ERROR] error runStmt result. " ++ show msg
+    Just (GHC.ExecComplete (Right names) _) -> names2EvalBody ctxMVar isRefable stmt names
+    
 
 -- |
 --
 --
-names2EvalBody :: MVar DAPContext -> String -> [GHC.Name] -> G.GHCi (Either String D.EvaluateBody)
-names2EvalBody ctxMVar key names
+names2EvalBody :: MVar DAPContext -> Bool -> String -> [GHC.Name] -> G.GHCi (Either String D.EvaluateBody)
+names2EvalBody ctxMVar isRefable key names
   | 0 == length names = return $ Left $ "Not in scope. " ++ key
   | 1 == length names = withName $ head names
   | otherwise = return $ Left $ "Ambiguous name. " ++ key
@@ -879,7 +986,7 @@ names2EvalBody ctxMVar key names
       let typeStr = showSDoc dflags (pprTypeForUser ty)
           valStr  = showSDoc dflags termSDoc
 
-      nextIdx <- getNextIdx ctxMVar t key
+      nextIdx <- if True == isRefable then getNextIdx ctxMVar t key else return 0
       valStr' <- if 0 == nextIdx then return valStr
                    else  getDataConstructor t
 

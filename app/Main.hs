@@ -21,8 +21,9 @@ main = do
 
   mvarCtx <- newMVar defaultDAPContext
 
-  let defaultCommands = G.availableCommands G.defaultGhciSettings
+  let ghciSettings    = G.defaultGhciSettings mvarCtx
+      defaultCommands = G.availableCommands ghciSettings
       withDapCommands = defaultCommands ++ (dapCommands mvarCtx)
 
-  G.ghcMain G.defaultGhciSettings {G.availableCommands = withDapCommands}
+  G.ghcMain ghciSettings {G.availableCommands = withDapCommands}
   

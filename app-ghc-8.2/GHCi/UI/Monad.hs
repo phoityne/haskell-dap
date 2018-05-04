@@ -62,6 +62,11 @@ import Control.Monad.Trans.Class
 import Control.Monad.IO.Class
 import Data.Map.Strict (Map)
 
+
+import qualified Haskell.DAP.GHCi.Type as DAP
+import Control.Concurrent
+
+
 -----------------------------------------------------------------------------
 -- GHCi monad
 
@@ -139,8 +144,9 @@ data GHCiState = GHCiState
 
         flushStdHandles :: ForeignHValue,
             -- ^ @hFlush stdout; hFlush stderr@ in the interpreter
-        noBuffering :: ForeignHValue
+        noBuffering :: ForeignHValue,
             -- ^ @hSetBuffering NoBuffering@ for stdin/stdout/stderr
+        dapContextGHCiState :: DAP.MVarDAPContext
      }
 
 type TickArray = Array Int [(GHC.BreakIndex,RealSrcSpan)]
@@ -337,7 +343,7 @@ printForUserPartWay doc = do
 runStmt :: String -> GHC.SingleStep -> GHCi (Maybe GHC.ExecResult)
 runStmt expr step = do
   st <- getGHCiState
-  GHC.handleSourceError (\e -> do GHC.printException e; return Nothing) $ do
+  GHC.handleSourceError (\e -> do GHC.printException e; saveRunStmtDeclException e; return Nothing) $ do
     let opts = GHC.execOptions
                   { GHC.execSourceFile = progname st
                   , GHC.execLineNumber = line_number st
@@ -354,6 +360,7 @@ runDecls decls = do
     withArgs (args st) $
       reflectGHCi x $ do
         GHC.handleSourceError (\e -> do GHC.printException e;
+                                        saveRunStmtDeclException e;
                                         return Nothing) $ do
           r <- GHC.runDeclsWithLocation (progname st) (line_number st) decls
           return (Just r)
@@ -454,3 +461,22 @@ mkEvalWrapper progname args =
   GHC.compileExprRemote $
     "\\m -> System.Environment.withProgName " ++ show progname ++
     "(System.Environment.withArgs " ++ show args ++ " m)"
+
+
+
+------------------------------------------------------------------------------------------------
+--  DAP Utility
+------------------------------------------------------------------------------------------------
+
+-- |
+--
+saveRunStmtDeclException :: SourceError -> GHCi SourceError
+saveRunStmtDeclException res = do
+  mvarCtx <- dapContextGHCiState <$> getGHCiState 
+
+  ctx <- liftIO $ takeMVar mvarCtx
+  let cur = DAP.runStmtDeclExceptionDAPContext ctx
+
+  liftIO $ putMVar mvarCtx ctx{DAP.runStmtDeclExceptionDAPContext = res : cur}
+
+  return res

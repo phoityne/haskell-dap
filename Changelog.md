@@ -1,4 +1,9 @@
 
+20180530 haskell-dap-0.0.5.0
+
+  * [ADD] setExceptionBreakpoint commands.
+
+
 20180430 haskell-dap-0.0.4.0
 
   * [ADD] next, stepIn, setFunctionBreakpoint commands.

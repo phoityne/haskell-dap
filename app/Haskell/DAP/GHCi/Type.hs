@@ -4,11 +4,18 @@ import qualified GHC
 import RtClosureInspect
 
 import qualified Data.Map as M
+import Control.Concurrent
+import HscTypes
 
 
 -- |
 --
 type EvalString = String
+
+
+-- |
+--
+type MVarDAPContext = MVar DAPContext
 
 
 -- |
@@ -19,6 +26,9 @@ data DAPContext = DAPContext {
   , frameIdDAPContext :: Int
   , srcBPsDAPContext  :: M.Map Int FilePath
   , funcBPsDAPContext :: [Int]
+  , traceCmdExecResultDAPContext   :: [Maybe GHC.ExecResult]
+  , doContinueExecResultDAPContext :: [GHC.ExecResult]
+  , runStmtDeclExceptionDAPContext :: [SourceError]
   }
 
   
@@ -31,6 +41,9 @@ defaultDAPContext = DAPContext {
   , frameIdDAPContext = 0
   , srcBPsDAPContext  = M.fromList []
   , funcBPsDAPContext = []
+  , traceCmdExecResultDAPContext = []
+  , doContinueExecResultDAPContext = []
+  , runStmtDeclExceptionDAPContext = []
   }
 
   
