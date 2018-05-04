@@ -132,8 +132,12 @@ import GHC.IO.Exception ( IOErrorType(InvalidArgument) )
 import GHC.IO.Handle ( hFlushAll )
 import GHC.TopHandler ( topHandler )
 
-
-import qualified Haskell.DAP.GHCi.Utility as DAP
+------------------------------------------------------------------------------
+-- DAP
+------------------------------------------------------------------------------
+import qualified Haskell.DAP.GHCi.Type as DAP
+import InteractiveEval (ExecResult)
+import Control.Concurrent
 
 
 -----------------------------------------------------------------------------
@@ -143,17 +147,19 @@ data GhciSettings = GhciSettings {
         shortHelpText     :: String,
         fullHelpText      :: String,
         defPrompt         :: String,
-        defPrompt2        :: String
+        defPrompt2        :: String,
+        dapContextGhciSettings :: DAP.MVarDAPContext
     }
 
-defaultGhciSettings :: GhciSettings
-defaultGhciSettings =
+defaultGhciSettings :: DAP.MVarDAPContext -> GhciSettings
+defaultGhciSettings dapCtx =
     GhciSettings {
         availableCommands = ghciCommands,
         shortHelpText     = defShortHelpText,
         defPrompt         = default_prompt,
         defPrompt2        = default_prompt2,
-        fullHelpText      = defFullHelpText
+        fullHelpText      = defFullHelpText,
+        dapContextGhciSettings = dapCtx
     }
 
 ghciWelcomeMsg :: String
@@ -475,7 +481,8 @@ interactiveUI config srcs maybe_exprs = do
                    lastErrorLocations = lastErrLocationsRef,
                    mod_infos          = M.empty,
                    flushStdHandles    = flush,
-                   noBuffering        = nobuffering
+                   noBuffering        = nobuffering,
+                   dapContextGHCiState = dapContextGhciSettings config
                  }
 
    return ()
@@ -2946,7 +2953,7 @@ stepCmd :: String -> GHCi ()
 stepCmd arg = withSandboxOnly ":step" $ step arg
   where
   step []         = doContinue (const True) GHC.SingleStep
-  step expression = runStmt expression GHC.SingleStep >>= DAP.showStoppedEventBody >> return ()
+  step expression = runStmt expression GHC.SingleStep >> return ()
 
 stepLocalCmd :: String -> GHCi ()
 stepLocalCmd arg = withSandboxOnly ":steplocal" $ step arg
@@ -2998,7 +3005,7 @@ traceCmd arg
   = withSandboxOnly ":trace" $ tr arg
   where
   tr []         = doContinue (const True) GHC.RunAndLogSteps
-  tr expression = runStmt expression GHC.RunAndLogSteps >>= DAP.showStoppedEventBody >> return ()
+  tr expression = runStmt expression GHC.RunAndLogSteps >>= saveTraceCmdExecResult >> return ()
 
 continueCmd :: String -> GHCi ()
 continueCmd = noArgs $ withSandboxOnly ":continue" $ doContinue (const True) GHC.RunToCompletion
@@ -3007,7 +3014,7 @@ continueCmd = noArgs $ withSandboxOnly ":continue" $ doContinue (const True) GHC
 doContinue :: (SrcSpan -> Bool) -> SingleStep -> GHCi ()
 doContinue pre step = do
   runResult <- resume pre step
-  DAP.showStoppedEventBody (Just runResult)
+  saveDoContinueExecResult runResult
   _ <- afterRunStmt pre runResult
   return ()
 
@@ -3582,3 +3589,36 @@ wantNameFromInterpretedModule noCanDo str and_then =
                then noCanDo n $ text "module " <> ppr modl <>
                                 text " is not interpreted"
                else and_then n
+
+
+------------------------------------------------------------------------------------------------
+--  DAP Utility
+------------------------------------------------------------------------------------------------
+
+-- |
+--
+saveTraceCmdExecResult :: Maybe ExecResult -> GHCi (Maybe ExecResult)
+saveTraceCmdExecResult res = do
+  mvarCtx <- dapContextGHCiState  <$> getGHCiState 
+
+  ctx <- liftIO $ takeMVar mvarCtx
+  let cur = DAP.traceCmdExecResultDAPContext ctx
+
+  liftIO $ putMVar mvarCtx ctx{DAP.traceCmdExecResultDAPContext = res : cur}
+
+  return res
+
+
+-- |
+--
+saveDoContinueExecResult :: ExecResult -> GHCi ExecResult
+saveDoContinueExecResult res = do
+  mvarCtx <- dapContextGHCiState <$> getGHCiState 
+
+  ctx <- liftIO $ takeMVar mvarCtx
+  let cur = DAP.doContinueExecResultDAPContext ctx
+
+  liftIO $ putMVar mvarCtx ctx{DAP.doContinueExecResultDAPContext = res : cur}
+
+  return res
+
