@@ -810,12 +810,6 @@ dapStepInCommand mvarCtx argsStr = do
 ------------------------------------------------------------------------------------------------
 
 -- |
--- 
-_MAX_STACK_TRACE_SIZE :: Int
-_MAX_STACK_TRACE_SIZE = 50
-
-
--- |
 --
 dapStackTraceCommand :: MVar DAPContext -> String -> InputT G.GHCi Bool
 dapStackTraceCommand ctxMVar argsStr = do
@@ -837,15 +831,23 @@ dapStackTraceCommand ctxMVar argsStr = do
 
     withResume r = case isExceptionResume r of
       True -> do
-        traces <- mapM resumeHist2stackFrame $ GHC.resumeHistory r
+        dflags <- G.getDynFlags
+        let maxSize = GHC.ghciHistSize dflags
+        -- liftIO $ putStrLn $ "[DAP][INFO] " ++ show maxSize
+
+        traces <- mapM resumeHist2stackFrame $ take maxSize $ GHC.resumeHistory r
 
         return $ Right D.defaultStackTraceBody {
             D.stackFramesStackTraceBody = traces
           , D.totalFramesStackTraceBody = length traces
           }
       False -> do
+        dflags <- G.getDynFlags
         let start  = resume2stackframe r
-        hists <- mapM resumeHist2stackFrame $ GHC.resumeHistory r
+            maxSize = (GHC.ghciHistSize dflags) - 1
+        -- liftIO $ putStrLn $ "[DAP][INFO] " ++ show maxSize
+
+        hists <- mapM resumeHist2stackFrame $ take maxSize $ GHC.resumeHistory r
         
         let traces = start : hists
 
@@ -1157,8 +1159,9 @@ runStmtDAP ctxMVar isRefable stmt = do
 
   G.runStmt stmt GHC.RunToCompletion >>= \case
     Nothing -> Left <$> getRunStmtSourceError
-    Just (GHC.ExecBreak _ Nothing) -> Left <$> getRunStmtSourceError
-    Just (GHC.ExecBreak names _)   -> names2EvalBody ctxMVar isRefable stmt names
+--    Just (GHC.ExecBreak _ Nothing) -> Left <$> getRunStmtSourceError
+--    Just (GHC.ExecBreak names _)   -> names2EvalBody ctxMVar isRefable stmt names
+    Just (GHC.ExecBreak _ _) -> return $ Left $ "[DAP][ERROR] unexpected break result. "
     Just (GHC.ExecComplete (Left msg) _) -> return $ Left $ "[DAP][ERROR] error runStmt result. " ++ show msg
     Just (GHC.ExecComplete (Right names) _) -> names2EvalBody ctxMVar isRefable stmt names
     
