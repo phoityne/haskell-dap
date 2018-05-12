@@ -34,7 +34,8 @@ module GHCi.UI (
         traceCmd,
         stepCmd,
         stepLocalCmd,
-        runStmt
+        runStmt,
+        toBreakIdAndLocation
     ) where
 
 #include "HsVersions.h"

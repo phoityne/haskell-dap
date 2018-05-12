@@ -93,6 +93,9 @@ drive2lower xs = xs
 
 -- |
 --
+--   phoityne -> haskell-dap
+--   RequestArgument is encoded. decode to [Word8]
+--
 readDAP :: Read a => String -> Either String a
 readDAP argsStr = case R.readEither argsStr :: Either String [Word8] of
   Left err -> Left $ "read [Word8] failed. " ++ err ++ " : " ++ argsStr
@@ -105,8 +108,11 @@ readDAP argsStr = case R.readEither argsStr :: Either String [Word8] of
 
 -- |
 --
+--   haskell-dap -> phoityne
+--   Just show ResponseBody. no need to encode to [Word8]
+--
 showDAP :: Show a => a -> String
-showDAP = show . BS.unpack . T.encodeUtf8 . T.pack . show
+showDAP = show
 
 
 -- |
