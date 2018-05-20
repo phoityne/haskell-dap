@@ -32,6 +32,18 @@ Currently this project is an experimental design and implementation.
 
 ![03_inspect_repl.gif](https://raw.githubusercontent.com/phoityne/haskell-dap/master/docs/03_inspect_repl.gif)  
 
+### logpoint
+
+![04_log_point.gif](https://raw.githubusercontent.com/phoityne/haskell-dap/master/docs/04_log_point.gif)  
+
+### break condition
+
+![05_break_exp.gif](https://raw.githubusercontent.com/phoityne/haskell-dap/master/docs/05_break_exp.gif)  
+
+### break hit count
+
+![06_break_hitcount.gif](https://raw.githubusercontent.com/phoityne/haskell-dap/master/docs/06_break_hitcount.gif)  
+
 ## Install
 
 install vscode and [phoityne](https://marketplace.visualstudio.com/items?itemName=phoityne.phoityne-vscode) extension.
