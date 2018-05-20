@@ -12,6 +12,10 @@ _DAP_HEADER = "<<DAP>>"
 _DAP_CMD_END :: String
 _DAP_CMD_END = "<<DAP_CMD_END>>"
 
+-- |
+--
+_DAP_HEADER_OUTPUT_EVENT :: String
+_DAP_HEADER_OUTPUT_EVENT = "<<DAP_OUTPUT_EVENT>>"
 
 -- |
 --

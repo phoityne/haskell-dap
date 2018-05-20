@@ -22,6 +22,8 @@ import Control.Concurrent
 import Haskell.DAP.GHCi.Constant
 import Haskell.DAP.GHCi.Type
 
+import qualified GHCi.DAP.IFData as D
+
 -- |
 --
 _SLASH :: Char
@@ -120,6 +122,14 @@ showDAP = show
 printDAP :: Show a => a -> G.GHCi ()
 printDAP dat = do
   let outStr = _DAP_HEADER ++ showDAP dat
+
+  liftIO $ putStrLn outStr
+
+-- |
+--
+printOutputEventDAP ::  (Either String D.OutputEventBody) -> G.GHCi ()
+printOutputEventDAP dat = do
+  let outStr = _DAP_HEADER_OUTPUT_EVENT ++ showDAP dat
 
   liftIO $ putStrLn outStr
 

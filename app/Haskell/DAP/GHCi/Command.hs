@@ -618,7 +618,7 @@ dapContinueCommand mvarCtx argsStr =   withArgs (readDAP argsStr)
                                               }
                                             , hitCntSourceBreakpointInfo = curCnt} = do
       let newCnt = curCnt + 1
-          stmt   = "let _DAP_CNT = " ++ show newCnt ++ " in " ++ condStr
+          stmt   = "let _CNT = " ++ show newCnt ++ " in " ++ condStr
 
       liftIO $ updateSrcBreakCounter no bpInfo{hitCntSourceBreakpointInfo = newCnt}
 
@@ -645,7 +645,7 @@ dapContinueCommand mvarCtx argsStr =   withArgs (readDAP argsStr)
     funcBreakthroughCounterHandler _ (D.FunctionBreakpoint{D.hitConditionFunctionBreakpoint = Nothing}, _) = return Nothing
     funcBreakthroughCounterHandler no info@(D.FunctionBreakpoint{D.hitConditionFunctionBreakpoint = Just condStr}, curCnt) = do
       let newCnt = curCnt + 1
-          stmt   = "let _DAP_CNT = " ++ show newCnt ++ " in " ++ condStr
+          stmt   = "let _CNT = " ++ show newCnt ++ " in " ++ condStr
 
       liftIO $ updateFuncBreakCounter no (fst info, newCnt)
 
@@ -691,11 +691,20 @@ dapContinueCommand mvarCtx argsStr =   withArgs (readDAP argsStr)
     logPointHandler _ Nothing = return Nothing
     logPointHandler no (Just stmt) = runStmtDAP mvarCtx False stmt >>= \case
       Left err -> do
-        liftIO $ putStrLn $ "[DAP][ERROR] log statement fail. BPNO:" ++ show no ++ " " ++ stmt ++ " -> " ++ err
+        let msg = "[DAP][ERROR] log statement fail. BPNO:" ++ show no ++ " " ++ stmt ++ " -> " ++ err
+            body = D.defaultOutputEventBody { D.outputOutputEventBody = msg
+                                            , D.categoryOutputEventBody = "stderr" }
+        liftIO $ putStrLn msg
+
+        printOutputEventDAP (Right body)
+        
         return $ Just False
-      Right _ -> do
-        -- when ("()" /= D.typeEvaluateBody res) $
-        --   liftIO $ putStrLn $ "[DAP][ERROR] condition statement result type is not (). BPNO:" ++ show no ++ " " ++ stmt ++ " -> " ++ show res
+
+      Right res -> do
+        let body = D.defaultOutputEventBody {D.outputOutputEventBody = D.resultEvaluateBody res}
+
+        printOutputEventDAP (Right body)
+
         return $ Just True
 
 
@@ -1208,7 +1217,7 @@ names2EvalBody ctxMVar isRefable key names
       -- liftIO $ putStrLn "[DAP][INFO] Term Not yet supported."
 
       return D.defaultEvaluateBody {
-               D.resultEvaluateBody = valStr'
+               D.resultEvaluateBody = delDQ typeStr valStr'
              , D.typeEvaluateBody   = typeStr
              , D.variablesReferenceEvaluateBody = nextIdx
              }
@@ -1265,4 +1274,9 @@ names2EvalBody ctxMVar isRefable key names
               , D.variablesReferenceEvaluateBody = 0
               }
 
-
+    delDQ :: String -> String -> String
+    delDQ typ val
+      | (typ == "[Char]" || typ == "String")
+        && length val > 2
+        && head val == '"' && last val == '"' = tail $ init val 
+      | otherwise = val

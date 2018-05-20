@@ -49,6 +49,9 @@ module GHCi.DAP.IFData (
   , EvaluateArguments(..)
   , EvaluateBody(..)
   , defaultEvaluateBody
+    -- * event
+  , OutputEventBody(..)
+  , defaultOutputEventBody
     -- * commons
   , VariablePresentationHint(..)
   , Source(..)
@@ -374,7 +377,7 @@ data SetFunctionBreakpointsResponseBody =
     breakpointsSetFunctionBreakpointsResponseBody :: [Breakpoint]  -- Information about the breakpoints. The array elements correspond to the elements of the 'breakpoints' array.
   } deriving (Show, Read, Eq)
 
-  ------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------
 
 -- |
 --   Arguments for 'continue' request.
@@ -490,4 +493,24 @@ defaultStackFrame = StackFrame {
   , endLineStackFrame = 0
   , endColumnStackFrame = 0
 }
+
+
+------------------------------------------------------------------------------------
+
+
+-- |
+--   Event message for "output" event type. The event indicates that the target has produced output.
+--
+data OutputEventBody =
+  OutputEventBody {
+    categoryOutputEventBody :: String        -- The category of output (such as: 'console', 'stdout', 'stderr', 'telemetry'). If not specified, 'console' is assumed. 
+  , outputOutputEventBody   :: String        -- The output to report.
+  , dataOutputEventBody     :: Maybe String  -- Optional data to report. For the 'telemetry' category the data will be sent to telemetry, for the other categories the data is shown in JSON format.
+  } deriving (Show, Read, Eq)
+
+-- |
+--
+defaultOutputEventBody :: OutputEventBody
+defaultOutputEventBody = OutputEventBody "console" "" Nothing
+
 
