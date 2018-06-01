@@ -7,9 +7,9 @@ The goal is "let GHCi speak [DAP](https://code.visualstudio.com/docs/extensions/
 
 ## Information
 
-* [2018/04/30] Release haskel-dap-0.0.4.0.  
-  * [ADD] next, stepIn, setFunctionBreakpoint commands.
-
+* [2018/06/01] Release haskel-dap-0.0.5.0.  
+  * [ADD] setExceptionBreakpoint commands.
+  * [ADD] breakHitCounter, breakCondition, logPoint function.
 
 ## Limitation
 Currently this project is an experimental design and implementation.
@@ -62,7 +62,7 @@ install vscode and [phoityne](https://marketplace.visualstudio.com/items?itemNam
 Add `--with-ghc` option to `ghciCmd` variable in the vscode launch.json.  
 
 
-    "ghciCmd": "stack ghci --with-ghc=haskell-dap --test --no-load --no-build --main-is TARGET --ghci-options -fprint-evld-with-show ",
+    "ghciCmd": "stack ghci --with-ghc=haskell-dap --test --no-load --no-build --main-is TARGET --ghci-options -fghci-hist-size=5 --ghci-options -fprint-evld-with-show ",
 
 
 

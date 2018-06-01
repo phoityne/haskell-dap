@@ -1,5 +1,5 @@
 
-20180530 haskell-dap-0.0.5.0
+20180601 haskell-dap-0.0.5.0
 
   * [ADD] setExceptionBreakpoint commands.
   * [ADD] breakHitCounter, breakCondition, logPoint function.
