@@ -23,3 +23,8 @@ _GHCi_SCOPE :: String
 _GHCi_SCOPE = "GHCi Scope"
     
   
+-- |
+--
+_INSPECT_DEPTH :: Int
+_INSPECT_DEPTH = 10
+    

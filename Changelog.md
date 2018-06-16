@@ -1,4 +1,9 @@
 
+20180601 haskell-dap-0.0.6.0
+
+  * [ADD] support for VisualStudio2017.
+
+
 20180601 haskell-dap-0.0.5.0
 
   * [ADD] setExceptionBreakpoint commands.

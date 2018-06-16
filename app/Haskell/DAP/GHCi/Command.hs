@@ -267,12 +267,19 @@ dapSetBreakpointsCommand ctxMVar argsStr = do
     addBP :: String -> D.SourceBreakpoint -> G.GHCi (ModuleName, D.SourceBreakpoint, D.Breakpoint)
     addBP mod srcBP = do
       let lineNo   = show $ D.lineSourceBreakpoint srcBP
-          colNo    = maybe "" show $ D.columnSourceBreakpoint srcBP
+          colNo    = getColNo $ D.columnSourceBreakpoint srcBP
           argStr   = mod ++ " " ++ lineNo ++ " " ++ colNo
 
       bp <- addBreakpoint argStr
 
       return (mod, srcBP, bp)
+
+    -- |
+    --
+    getColNo :: Maybe Int -> String
+    getColNo Nothing = ""
+    getColNo (Just 1) = ""
+    getColNo (Just a) = show a
 
     -- |
     --
@@ -954,9 +961,12 @@ getBindingVariablesRoot ctxMVar = do
     -- |
     --  TyThings https://hackage.haskell.org/package/ghc-8.2.1/docs/HscTypes.html#t:TyThing
     --
+    tyThing2Val :: GHC.TyThing -> G.GHCi D.Variable
     tyThing2Val (AnId i) = do
-      let isForce = False
-      GHC.obtainTermFromId maxBound isForce i >>= withTerm i
+      let isForce = True
+      depth <- getInspectDepth ctxMVar
+      GHC.obtainTermFromId depth isForce i >>= withTerm i
+
     tyThing2Val x = do
       dflags <- getDynFlags
       return D.defaultVariable {
@@ -979,13 +989,16 @@ getBindingVariablesRoot ctxMVar = do
           typeStr = showSDoc dflags (pprTypeForUser ty)
           valStr  = showSDoc dflags termSDoc
 
+      nextIdx <- getNextIdx ctxMVar t nameStr
+      
       return D.defaultVariable {
         D.nameVariable  = nameStr
       , D.typeVariable  = typeStr
       , D.valueVariable = valStr
       , D.evaluateNameVariable = Just nameStr
-      , D.variablesReferenceVariable = 0
+      , D.variablesReferenceVariable = nextIdx
       }
+
     withTerm i _ = do
       dflags <- getDynFlags
       idSDoc   <- pprTypeAndContents i
@@ -1129,8 +1142,9 @@ dapEvaluateCommand ctxMVar argsStr = do
     withArgs :: Either String D.EvaluateArguments -> G.GHCi (Either String D.EvaluateBody)
     withArgs (Left err) = return $ Left $ "[DAP][ERROR] " ++  err ++ " : " ++ argsStr
     withArgs (Right args) = case D.contextEvaluateArguments args of
-      "repl" -> runRepl args
-      _      -> runOther args
+      Nothing     -> runRepl args
+      Just "repl" -> runRepl args
+      _           -> runOther args
 
     -- |
     --
@@ -1188,7 +1202,8 @@ names2EvalBody ctxMVar isRefable key names
 
     withTyThing (AnId i) = do
       let isForce = True
-      body <- GHC.obtainTermFromId maxBound isForce i >>= withTerm i
+      depth <- getInspectDepth ctxMVar
+      body  <- GHC.obtainTermFromId depth isForce i >>= withTerm i
       return $ Right body
 
     withTyThing x = do
@@ -1280,3 +1295,11 @@ names2EvalBody ctxMVar isRefable key names
         && length val > 2
         && head val == '"' && last val == '"' = tail $ init val 
       | otherwise = val
+
+
+-- |
+--
+getInspectDepth ::  MVar DAPContext -> G.GHCi Int
+getInspectDepth _ = return _INSPECT_DEPTH
+
+

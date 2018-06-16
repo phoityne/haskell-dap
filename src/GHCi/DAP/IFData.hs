@@ -184,7 +184,7 @@ data EvaluateArguments =
     
     etc. 
   -}
-  , contextEvaluateArguments    :: String
+  , contextEvaluateArguments    :: Maybe String
     } deriving (Show, Read, Eq)
 
     
