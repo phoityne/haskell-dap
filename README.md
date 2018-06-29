@@ -7,9 +7,10 @@ The goal is "let GHCi speak [DAP](https://code.visualstudio.com/docs/extensions/
 
 ## Information
 
-* [2018/06/01] Release haskel-dap-0.0.5.0.  
-  * [ADD] setExceptionBreakpoint commands.
-  * [ADD] breakHitCounter, breakCondition, logPoint function.
+* [2018/07/01] Release haskel-dap-0.0.6.0.  
+  * [MODIFY] support VisualStudio2017.(see [hdx4vs](https://github.com/phoityne/hdx4vsc))
+  * [ADD] [2][ support Logpoints](https://github.com/phoityne/haskell-dap/issues/3)
+
 
 ## Limitation
 Currently this project is an experimental design and implementation.

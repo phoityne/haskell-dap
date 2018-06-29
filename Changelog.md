@@ -1,7 +1,8 @@
 
 20180601 haskell-dap-0.0.6.0
 
-  * [ADD] support for VisualStudio2017.
+  * [MODIFY] support VisualStudio2017.(see [hdx4vs](https://github.com/phoityne/hdx4vsc))
+  * [ADD] [2][ support Logpoints](https://github.com/phoityne/haskell-dap/issues/3)
 
 
 20180601 haskell-dap-0.0.5.0
