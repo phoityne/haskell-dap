@@ -1,5 +1,5 @@
 name:                  haskell-dap
-version:               0.0.6.0
+version:               0.0.7.0
 synopsis:              haskell-dap is a GHCi having DAP interface.
 description:           Please see README.md
 homepage:              https://github.com/phoityne/haskell-dap
@@ -18,6 +18,8 @@ extra-source-files:    README.md
                      , src-c-8.0/PosixSource.h
                      , src-c-8.2/HsVersions.h
                      , src-c-8.2/PosixSource.h
+                     , src-c-8.4/HsVersions.h
+                     , src-c-8.4/PosixSource.h
 
 executable haskell-dap
   default-language:    Haskell2010
@@ -29,6 +31,9 @@ executable haskell-dap
   if impl(ghc >= 8.2.0) && impl(ghc < 8.3.0)
     hs-source-dirs:      app-ghc-8.2
 
+  if impl(ghc >= 8.4.0) && impl(ghc < 8.5.0)
+    hs-source-dirs:      app-ghc-8.4
+
   cpp-options:         -DGHCI
   cc-options:          -fPIC
   if impl(ghc >= 8.0.0) && impl(ghc < 8.1.0)
@@ -38,6 +43,10 @@ executable haskell-dap
   if impl(ghc >= 8.2.0) && impl(ghc < 8.3.0)
     include-dirs:        src-c-8.2/
     c-sources:           src-c-8.2/hschooks.c
+
+  if impl(ghc >= 8.4.0) && impl(ghc < 8.5.0)
+    include-dirs:        src-c-8.4/
+    c-sources:           src-c-8.4/hschooks.c
 
   main-is:             Main.hs
   other-modules:       Paths_haskell_dap
