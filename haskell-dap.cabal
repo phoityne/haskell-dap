@@ -1,95 +1,122 @@
-name:                  haskell-dap
-version:               0.0.7.0
-synopsis:              haskell-dap is a GHCi having DAP interface.
-description:           Please see README.md
-homepage:              https://github.com/phoityne/haskell-dap
-bug-reports:           https://github.com/phoityne/haskell-dap/issues
-license:               BSD3
-license-file:          LICENSE
-author:                phoityne_hs
-maintainer:            phoityne.hs@gmail.com
-copyright:             2017-2018 phoityne_hs
-category:              Development
-build-type:            Simple
-cabal-version:         >=1.10
-extra-source-files:    README.md
-                     , Changelog.md
-                     , src-c-8.0/HsVersions.h
-                     , src-c-8.0/PosixSource.h
-                     , src-c-8.2/HsVersions.h
-                     , src-c-8.2/PosixSource.h
-                     , src-c-8.4/HsVersions.h
-                     , src-c-8.4/PosixSource.h
+-- This file has been generated from package.yaml by hpack version 0.28.2.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: d788dabbf1e943422adc990b5601a69a994167f858dc7caca9af0a90ef9fe336
 
-executable haskell-dap
-  default-language:    Haskell2010
-  ghc-options:         -threaded -rtsopts -with-rtsopts=-N -Wall -fno-warn-unused-do-bind -fno-warn-name-shadowing
-  hs-source-dirs:      app
-  if impl(ghc >= 8.0.0) && impl(ghc < 8.1.0)
-    hs-source-dirs:      app-ghc-8.0
-
-  if impl(ghc >= 8.2.0) && impl(ghc < 8.3.0)
-    hs-source-dirs:      app-ghc-8.2
-
-  if impl(ghc >= 8.4.0) && impl(ghc < 8.5.0)
-    hs-source-dirs:      app-ghc-8.4
-
-  cpp-options:         -DGHCI
-  cc-options:          -fPIC
-  if impl(ghc >= 8.0.0) && impl(ghc < 8.1.0)
-    include-dirs:        src-c-8.0/
-    c-sources:           src-c-8.0/hschooks.c
-
-  if impl(ghc >= 8.2.0) && impl(ghc < 8.3.0)
-    include-dirs:        src-c-8.2/
-    c-sources:           src-c-8.2/hschooks.c
-
-  if impl(ghc >= 8.4.0) && impl(ghc < 8.5.0)
-    include-dirs:        src-c-8.4/
-    c-sources:           src-c-8.4/hschooks.c
-
-  main-is:             Main.hs
-  other-modules:       Paths_haskell_dap
-                     , Haskell.DAP.GHCi.Constant
-                     , Haskell.DAP.GHCi.Type
-                     , Haskell.DAP.GHCi.Utility
-                     , Haskell.DAP.GHCi.Command
-                     , GHCMain
-                     , GHCi.UI
-                     , GHCi.UI.Info
-                     , GHCi.UI.Monad
-                     , GHCi.UI.Tags
-  build-depends:       base
-                     , ghc
-                     , ghci
-                     , ghc-paths
-                     , transformers
-                     , containers
-                     , time
-                     , directory
-                     , haskeline
-                     , array
-                     , process
-                     , ghc-boot
-                     , filepath
-                     , bytestring
-                     , deepseq
-                     , haskell-dap
-                     , text
-  if os(windows)
-    build-depends:
-      Win32
-  else
-    build-depends:
-      unix
-    ghc-options:
-      -dynamic
-
+name:           haskell-dap
+version:        0.0.7.0
+synopsis:       haskell-dap is a GHCi having DAP interface.
+description:    Please see README.md
+category:       Development
+homepage:       https://github.com/phoityne/haskell-dap
+bug-reports:    https://github.com/phoityne/haskell-dap/issues
+author:         phoityne_hs
+maintainer:     phoityne.hs@gmail.com
+copyright:      2017-2018 phoityne_hs
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+cabal-version:  >= 1.10
+extra-source-files:
+    Changelog.md
+    README.md
+    src-c-8.0/HsVersions.h
+    src-c-8.0/PosixSource.h
+    src-c-8.2/HsVersions.h
+    src-c-8.2/PosixSource.h
+    src-c-8.4/HsVersions.h
+    src-c-8.4/PosixSource.h
 
 library
-  hs-source-dirs:      src
-  exposed-modules:     GHCi.DAP.IFData
-  build-depends:       base >= 4.7 && < 5
-  default-language:    Haskell2010
+  exposed-modules:
+      GHCi.DAP.IFData
+  other-modules:
+      Paths_haskell_dap
+  hs-source-dirs:
+      src
+  build-depends:
+      base >=4.7 && <5
+  default-language: Haskell2010
 
-
+executable haskell-dap
+  main-is: Main.hs
+  other-modules:
+      Haskell.DAP.GHCi.Command
+      Haskell.DAP.GHCi.Constant
+      Haskell.DAP.GHCi.Type
+      Haskell.DAP.GHCi.Utility
+      Paths_haskell_dap
+  hs-source-dirs:
+      app
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall -fno-warn-unused-do-bind -fno-warn-name-shadowing
+  cpp-options: -DGHCI
+  cc-options: -fPIC
+  build-depends:
+      array
+    , base
+    , bytestring
+    , containers
+    , deepseq
+    , directory
+    , filepath
+    , ghc
+    , ghc-boot
+    , ghc-paths
+    , ghci
+    , haskeline
+    , haskell-dap
+    , process
+    , text
+    , time
+    , transformers
+  if (impl(ghc >=8.0.0)) && (impl(ghc <8.1.0))
+    other-modules:
+        GHCi.UI
+        GHCi.UI.Info
+        GHCi.UI.Monad
+        GHCi.UI.Tags
+        GHCMain
+    hs-source-dirs:
+        app-ghc-8.0
+  if (impl(ghc >=8.2.0)) && (impl(ghc <8.3.0))
+    other-modules:
+        GHCi.UI
+        GHCi.UI.Info
+        GHCi.UI.Monad
+        GHCi.UI.Tags
+        GHCMain
+    hs-source-dirs:
+        app-ghc-8.2
+  if (impl(ghc >=8.4.0)) && (impl(ghc <8.5.0))
+    other-modules:
+        GHCi.UI
+        GHCi.UI.Info
+        GHCi.UI.Monad
+        GHCi.UI.Tags
+        GHCMain
+    hs-source-dirs:
+        app-ghc-8.4
+  if (impl(ghc >=8.0.0)) && (impl(ghc <8.1.0))
+    include-dirs:
+        src-c-8.0/
+    c-sources:
+        src-c-8.0/hschooks.c
+  if (impl(ghc >=8.2.0)) && (impl(ghc <8.3.0))
+    include-dirs:
+        src-c-8.2/
+    c-sources:
+        src-c-8.2/hschooks.c
+  if (impl(ghc >=8.4.0)) && (impl(ghc <8.5.0))
+    include-dirs:
+        src-c-8.4/
+    c-sources:
+        src-c-8.4/hschooks.c
+  if os(windows)
+    build-depends:
+        Win32
+  else
+    ghc-options: -dynamic
+    build-depends:
+        unix
+  default-language: Haskell2010
