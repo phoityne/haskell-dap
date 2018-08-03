@@ -7,9 +7,9 @@ The goal is "let GHCi speak [DAP](https://code.visualstudio.com/docs/extensions/
 
 ## Information
 
-* [2018/07/01] Release haskel-dap-0.0.6.0.  
-  * [MODIFY] support VisualStudio2017.(see [hdx4vs](https://github.com/phoityne/hdx4vsc))
-  * [ADD] [2][ support Logpoints](https://github.com/phoityne/haskell-dap/issues/3)
+* [2018/08/01] Release haskel-dap-0.0.7.0.  
+  * [ADD] [2][support ghc-8.4](https://github.com/phoityne/haskell-dap/issues/2)
+
 
 
 ## Limitation
