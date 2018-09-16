@@ -38,6 +38,7 @@ data SourceBreakpointInfo = SourceBreakpointInfo {
 data DAPContext = DAPContext {
     variableReferenceMapDAPContext :: M.Map Int (Term, EvalString)
   , bindingDAPContext :: [GHC.TyThing]
+  , bindingGlobalDAPContext :: [GHC.TyThing]
   , frameIdDAPContext :: Int
   , srcBPsDAPContext  :: M.Map Int SourceBreakpointInfo
   , funcBPsDAPContext :: M.Map Int (D.FunctionBreakpoint, Int)
@@ -53,6 +54,7 @@ defaultDAPContext :: DAPContext
 defaultDAPContext = DAPContext {
     variableReferenceMapDAPContext = M.fromList []
   , bindingDAPContext = []
+  , bindingGlobalDAPContext = []
   , frameIdDAPContext = 0
   , srcBPsDAPContext  = M.fromList []
   , funcBPsDAPContext = M.fromList []

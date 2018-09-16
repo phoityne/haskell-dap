@@ -1,4 +1,9 @@
 
+20180924 haskell-dap-0.0.8.0
+
+  * [ADD] GHCi gobal scope reference.
+
+
 20180801 haskell-dap-0.0.7.0
 
   * [ADD] [2][support ghc-8.4](https://github.com/phoityne/haskell-dap/issues/2)

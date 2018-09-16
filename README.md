@@ -7,15 +7,14 @@ The goal is "let GHCi speak [DAP](https://code.visualstudio.com/docs/extensions/
 
 ## Information
 
-* [2018/08/01] Release haskel-dap-0.0.7.0.  
-  * [ADD] [2][support ghc-8.4](https://github.com/phoityne/haskell-dap/issues/2)
-
+* [2018/09/24] Release haskel-dap-0.0.8.0.  
+  * [ADD] GHCi gobal scope reference.
 
 
 ## Limitation
 Currently this project is an experimental design and implementation.
 
-* supporting ghc-8.0.2, ghc-8.2.2
+* supporting ghc-8.0, ghc-8.2, ghc-8.4
 * need stack project.
 * checked on windows7, centos7
 

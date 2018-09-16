@@ -170,12 +170,9 @@ showTermErrorHandler e = return $ text $ show e
 getNameTypeValue :: String -> (String, String, String)
 getNameTypeValue str = (strip nameStr, strip typeStr, strip valueStr)
   where
-    nameStr   = takeWhile (/= ' ')  str
-    typeStr   = takeWhile (/= '=')  $ drop 4 $ dropWhile (/= ' ') str 
-    valueStr_ = tail $ dropWhile (/= '=') str
-    valueStr  = if elem "->" (words typeStr) then "function :: " ++ typeStr
-                  else valueStr_
-
+    nameStr  = head $ words str
+    typeStr  = unwords $ takeWhile ((/=)"=") $ tail $ tail $ words str 
+    valueStr = unwords $ tail $ dropWhile ((/=)"=") $ words str 
 
 -- |
 --

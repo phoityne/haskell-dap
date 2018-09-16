@@ -5,7 +5,7 @@
 -- hash: d788dabbf1e943422adc990b5601a69a994167f858dc7caca9af0a90ef9fe336
 
 name:           haskell-dap
-version:        0.0.7.0
+version:        0.0.8.0
 synopsis:       haskell-dap is a GHCi having DAP interface.
 description:    Please see README.md
 category:       Development
