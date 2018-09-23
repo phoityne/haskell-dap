@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: d788dabbf1e943422adc990b5601a69a994167f858dc7caca9af0a90ef9fe336
+-- hash: bcc97d09974b62fea7bfc4402e5d609e3dc5d4d8b0be6cd630be026b9e99fa17
 
 name:           haskell-dap
 version:        0.0.8.0

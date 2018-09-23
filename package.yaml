@@ -82,3 +82,4 @@ executables:
         ghc-options: -dynamic
         dependencies:
         - unix
+        
