@@ -7,8 +7,8 @@ The goal is "let GHCi speak [DAP](https://code.visualstudio.com/docs/extensions/
 
 ## Information
 
-* [2018/09/24] Release haskel-dap-0.0.8.0.  
-  * [ADD] GHCi gobal scope reference.
+* [2018/10/14] Release haskel-dap-0.0.9.0.  
+  * [MODIFY] logpoint output change to console.
 
 
 ## Limitation

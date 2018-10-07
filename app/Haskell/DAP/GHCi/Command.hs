@@ -14,6 +14,8 @@ import FastString
 import DataCon
 import DynFlags
 import RtClosureInspect
+import InteractiveEvalTypes 
+import qualified Module as GHC
 import qualified GHCi.UI as GHCi
 import qualified GHCi.UI.Monad as GHCi hiding (runStmt)
 
@@ -646,7 +648,9 @@ dapContinueCommand mvarCtx argsStr =   withArgs (readDAP argsStr)
                                               }
                                             , hitCntSourceBreakpointInfo = curCnt} = do
       let newCnt = curCnt + 1
-          stmt   = "let _CNT = " ++ show newCnt ++ " in " ++ condStr
+          stmt   = if L.isInfixOf "_CNT" condStr 
+                     then "let _CNT = " ++ show newCnt ++ " in " ++ condStr
+                     else "let _CNT = " ++ show newCnt ++ " in _CNT " ++ condStr
 
       liftIO $ updateSrcBreakCounter no bpInfo{hitCntSourceBreakpointInfo = newCnt}
 
@@ -673,7 +677,9 @@ dapContinueCommand mvarCtx argsStr =   withArgs (readDAP argsStr)
     funcBreakthroughCounterHandler _ (D.FunctionBreakpoint{D.hitConditionFunctionBreakpoint = Nothing}, _) = return Nothing
     funcBreakthroughCounterHandler no info@(D.FunctionBreakpoint{D.hitConditionFunctionBreakpoint = Just condStr}, curCnt) = do
       let newCnt = curCnt + 1
-          stmt   = "let _CNT = " ++ show newCnt ++ " in " ++ condStr
+          stmt   = if L.isInfixOf "_CNT" condStr 
+            then "let _CNT = " ++ show newCnt ++ " in " ++ condStr
+            else "let _CNT = " ++ show newCnt ++ " in _CNT " ++ condStr
 
       liftIO $ updateFuncBreakCounter no (fst info, newCnt)
 
@@ -717,23 +723,22 @@ dapContinueCommand mvarCtx argsStr =   withArgs (readDAP argsStr)
     -- 
     logPointHandler :: Int -> Maybe String -> GHCi.GHCi (Maybe Bool)
     logPointHandler _ Nothing = return Nothing
-    logPointHandler no (Just stmt) = runStmtDAP mvarCtx False stmt >>= \case
-      Left err -> do
-        let msg = "[DAP][ERROR] log statement fail. BPNO:" ++ show no ++ " " ++ stmt ++ " -> " ++ err
-            body = D.defaultOutputEventBody { D.outputOutputEventBody = msg
-                                            , D.categoryOutputEventBody = "stderr" }
-        liftIO $ putStrLn msg
+    logPointHandler no (Just stmt) = do
+      runStmtDAP mvarCtx False stmt >>= \case
+        Left err -> do
+          let msg = "[DAP][ERROR] logpoint evaluate statement error at BPNO:" ++ show no ++ " error:" ++ err
+              body = D.defaultOutputEventBody { D.outputOutputEventBody = msg
+                                              , D.categoryOutputEventBody = "stderr" }
+          printOutputEventDAP (Right body)
+          return $ Just False
 
-        printOutputEventDAP (Right body)
-        
-        return $ Just False
+        Right res -> do
+          let msg = D.resultEvaluateBody res ++ "\n"
+              body = D.defaultOutputEventBody { D.outputOutputEventBody = msg
+                                              , D.categoryOutputEventBody = "console"}
 
-      Right res -> do
-        let body = D.defaultOutputEventBody {D.outputOutputEventBody = D.resultEvaluateBody res}
-
-        printOutputEventDAP (Right body)
-
-        return $ Just True
+          printOutputEventDAP (Right body)
+          return $ Just True
 
 
 -- |
@@ -751,8 +756,10 @@ withExecResult _ _ (GHC.ExecComplete { GHC.execResult = Left (SomeException e)})
             , D.textStoppedEventBody = show e
             }
 
-withExecResult _ reason (GHC.ExecBreak{GHC.breakInfo = Just _}) = do
-  return $   Right D.defaultStoppedEventBody {
+withExecResult _ reason (GHC.ExecBreak{GHC.breakInfo = Just (BreakInfo _ _)}) = do
+  -- liftIO $ putStrLn $ "[DAP][DEBUG] " ++ GHC.moduleNameString (GHC.moduleName m)
+  -- liftIO $ putStrLn $ "[DAP][DEBUG] " ++ show n
+  return $  Right D.defaultStoppedEventBody {
               D.reasonStoppedEventBody = reason
             }
 
@@ -1254,10 +1261,12 @@ runStmtDAP ctxMVar isRefable stmt = do
 
   GHCi.runStmt stmt GHC.RunToCompletion >>= \case
     Nothing -> Left <$> getRunStmtSourceError
---    Just (GHC.ExecBreak _ Nothing) -> Left <$> getRunStmtSourceError
---    Just (GHC.ExecBreak names _)   -> names2EvalBody ctxMVar isRefable stmt names
-    Just (GHC.ExecBreak _ _) -> return $ Left $ "[DAP][ERROR] unexpected break result. "
-    Just (GHC.ExecComplete (Left msg) _) -> return $ Left $ "[DAP][ERROR] error runStmt result. " ++ show msg
+    Just (GHC.ExecBreak _ Nothing) -> return $ Left $ "unexpected break occured while evaluating stmt:" ++ stmt
+    Just (GHC.ExecBreak _ (Just (BreakInfo (GHC.Module _ modName) idx)))   -> do
+      let modStr = GHC.moduleNameString modName
+      return $ Left $  "unexpected break occured. breakNo:" ++ show idx
+                    ++ " in " ++ modStr ++ " while evaluating stmt:" ++ stmt
+    Just (GHC.ExecComplete (Left msg) _) -> return $ Left $ "runStmt error. " ++ show msg
     Just (GHC.ExecComplete (Right names) _) -> names2EvalBody ctxMVar isRefable stmt names
     
 

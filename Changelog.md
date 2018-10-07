@@ -1,4 +1,9 @@
 
+20181014 haskell-dap-0.0.9.0
+
+  * [MODIFY] logpoint output change to console.
+
+
 20180924 haskell-dap-0.0.8.0
 
   * [ADD] GHCi gobal scope reference.
