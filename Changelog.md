@@ -1,7 +1,8 @@
 
 20181014 haskell-dap-0.0.9.0
 
-  * [MODIFY] logpoint output change to console.
+  * [MODIFY] logpoint output to console.
+  * [FIX][[1](https://github.com/phoityne/hdx4vsc/issues/1)]debugger does not work with vscode-1.28.(Fixed with haskell-dap only.)
 
 
 20180924 haskell-dap-0.0.8.0
@@ -11,13 +12,13 @@
 
 20180801 haskell-dap-0.0.7.0
 
-  * [ADD] [2][support ghc-8.4](https://github.com/phoityne/haskell-dap/issues/2)
+  * [ADD] [support ghc-8.4](https://github.com/phoityne/haskell-dap/issues/2)
 
 
 20180601 haskell-dap-0.0.6.0
 
   * [MODIFY] support VisualStudio2017.(see [hdx4vs](https://github.com/phoityne/hdx4vsc))
-  * [ADD] [3][ support Logpoints](https://github.com/phoityne/haskell-dap/issues/3)
+  * [ADD] [ support Logpoints](https://github.com/phoityne/haskell-dap/issues/3)
 
 
 20180601 haskell-dap-0.0.5.0

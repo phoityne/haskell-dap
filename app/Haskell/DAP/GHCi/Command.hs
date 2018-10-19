@@ -44,6 +44,10 @@ dapCommands ctx = map mkCmd [
   , ("dap-set-breakpoints", dapCmdRunner dapSetBreakpointsCommand ctx, noCompletion)
   , ("dap-set-function-breakpoints"
                   , dapCmdRunner dapSetFunctionBreakpointsCommand ctx, noCompletion)
+  , ("dap-set-function-breakpoint"
+                  , dapCmdRunner dapSetFuncBreakpointCommand ctx, noCompletion)
+  , ("dap-delete-breakpoint"
+                  , dapCmdRunner dapDeleteBreakpointCommand  ctx, noCompletion)
   , ("dap-continue",        dapCmdRunner dapContinueCommand ctx,       noCompletion)
   , ("dap-next",            dapCmdRunner dapNextCommand ctx,           noCompletion)
   , ("dap-step-in",         dapCmdRunner dapStepInCommand ctx,         noCompletion)
@@ -399,11 +403,110 @@ dapSetFunctionBreakpointsCommand ctxMVar argsStr = do
 
     -- |
     --
-    getBpNo :: (D.FunctionBreakpoint, D.Breakpoint) -> [(Int, (D.FunctionBreakpoint, Int))] -> [(Int, (D.FunctionBreakpoint, Int))]
+    getBpNo :: (D.FunctionBreakpoint, D.Breakpoint)
+            -> [(Int, (D.FunctionBreakpoint, Int))]
+            -> [(Int, (D.FunctionBreakpoint, Int))]
     getBpNo (funcBP, bp) acc = case D.idBreakpoint bp of
       Nothing -> acc
       Just no -> (no, (funcBP, 0)) : acc 
 
+
+------------------------------------------------------------------------------------------------
+--  DAP Command :dap-set-function-breakpoint-adhoc
+------------------------------------------------------------------------------------------------
+
+-- |
+--
+dapSetFuncBreakpointCommand :: MVar DAPContext -> String -> GHCi.GHCi ()
+dapSetFuncBreakpointCommand ctxMVar argsStr = do
+  res <- withArgs (readDAP argsStr) 
+  printDAP res
+
+  where
+    withArgs (Left err) = return $ Left $ "[DAP][ERROR] " ++  err ++ " : " ++ argsStr
+    withArgs (Right (startup, funcBP)) = getModuleByFile startup >>= \case
+      Left err -> return $ Left err
+      Right modName -> do
+        let funcName = D.nameFunctionBreakpoint funcBP
+            argStr   = modName ++ "." ++ funcName
+
+        bp <- addBreakpoint argStr
+        liftIO $ updateBpCtx (funcBP, bp)
+
+        return $ Right bp
+    {-
+    -- |
+    --
+    addBP :: (String, D.FunctionBreakpoint) -> GHCi.GHCi (D.FunctionBreakpoint, D.Breakpoint)
+    addBP (startup, funcBP) = getModuleByFile startup >>= withMod funcBP
+
+    withMod funcBP (Right modName) = do
+      let funcName = D.nameFunctionBreakpoint funcBP
+          argStr   = modName ++ "." ++ funcName
+
+      bp <- addBreakpoint argStr
+      
+      return (funcBP, bp)
+-}
+    -- |
+    --
+    updateBpCtx :: (D.FunctionBreakpoint, D.Breakpoint) -> IO ()
+    updateBpCtx (funcBP, bp) = case D.idBreakpoint bp of
+      Nothing -> return ()
+      Just no -> do
+        ctx <- takeMVar ctxMVar
+        let funcBpMap =  funcBPsDAPContext ctx
+
+        putMVar ctxMVar $ ctx{funcBPsDAPContext = M.insert no (funcBP, 0) funcBpMap}
+
+
+-- |
+--
+getModuleByFile :: String -> GHCi.GHCi (Either String String)
+getModuleByFile srcPath = do
+
+  modSums <- GHCi.getLoadedModules
+  let modPaths = map takeModPath modSums
+
+  case filter (isPathMatch srcPath) modPaths of
+    ((m, _):[]) -> do
+      -- liftIO $ putStrLn $ "[DAP][INFO][dapSetBreakpointsCommand] " ++ p ++ " -> " ++ m
+      return $ Right m
+    _ -> return $ Left $ "[DAP][ERROR] loaded module can not find from path. <" ++ srcPath ++ "> " ++  show modPaths
+
+  where
+    takeModPath ms = (GHC.moduleNameString (GHC.ms_mod_name ms), GHC.ms_hspp_file ms)
+    isPathMatch srcPath (_, p) = (nzPath srcPath) == (nzPath p)
+
+------------------------------------------------------------------------------------------------
+--  DAP Command :dap-delete-breakpoint-adhoc
+------------------------------------------------------------------------------------------------
+
+-- |
+--
+dapDeleteBreakpointCommand :: MVar DAPContext -> String -> GHCi.GHCi ()
+dapDeleteBreakpointCommand ctxMVar argsStr = do
+  res <- withArgs (readDAP argsStr) 
+  printDAP res
+
+  where
+    withArgs (Left err) = return $ Left $ "[DAP][ERROR] " ++  err ++ " : " ++ argsStr
+    withArgs (Right bp) = withBpId $ D.idBreakpoint bp
+
+    withBpId Nothing    = return $ Left $ "[DAP][ERROR] breakpoint number not found. " ++ show argsStr
+    withBpId (Just bid) = do
+      delBreakpoint bid
+      liftIO $ updateBpCtx bid
+      return $ Right ()
+      
+    -- |
+    --
+    updateBpCtx :: Int -> IO ()
+    updateBpCtx bid = do
+      ctx <- takeMVar ctxMVar
+      let funcBpMap =  funcBPsDAPContext ctx
+
+      putMVar ctxMVar $ ctx{funcBPsDAPContext = M.delete bid funcBpMap}
 
 ------------------------------------------------------------------------------------------------
 
@@ -414,11 +517,14 @@ delBreakpoint bpNoStr = do
   curSt <- GHCi.getGHCiState
   let curCount = GHCi.break_ctr curSt
 
+  -- liftIO $ putStrLn $ "[DAP][INFO] before func breaks : " ++ show curCount
   GHCi.deleteCmd (show bpNoStr)
   
   newSt <- GHCi.getGHCiState
   let newCount = GHCi.break_ctr newSt
+  -- liftIO $ putStrLn $ "[DAP][INFO] after func breaks : " ++ show newCount
   
+  -- TODO; GHCi.break_ctr is not changed.
   return (newCount == curCount - 1)
 
 

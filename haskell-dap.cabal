@@ -2,10 +2,10 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: bcc97d09974b62fea7bfc4402e5d609e3dc5d4d8b0be6cd630be026b9e99fa17
+-- hash: 610c154d749679273b4df91119a0b15dcec5224657b35dd63fce719ba34d3aa2
 
 name:           haskell-dap
-version:        0.0.8.0
+version:        0.0.9.0
 synopsis:       haskell-dap is a GHCi having DAP interface.
 description:    Please see README.md
 category:       Development
