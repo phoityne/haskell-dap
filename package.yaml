@@ -1,5 +1,5 @@
 name: haskell-dap
-version: '0.0.9.0'
+version: '0.0.10.0'
 synopsis: haskell-dap is a GHCi having DAP interface.
 description: Please see README.md
 category: Development
@@ -18,6 +18,8 @@ extra-source-files:
 - src-c-8.2/PosixSource.h
 - src-c-8.4/HsVersions.h
 - src-c-8.4/PosixSource.h
+- src-c-8.6/HsVersions.h
+- src-c-8.6/PosixSource.h
 library:
   source-dirs: src
   exposed-modules:
@@ -62,6 +64,9 @@ executables:
       source-dirs: app-ghc-8.2
     - condition: (impl(ghc >=8.4.0)) && (impl(ghc <8.5.0))
       source-dirs: app-ghc-8.4
+    - condition: (impl(ghc >=8.6.0)) && (impl(ghc <8.7.0))
+      source-dirs: app-ghc-8.6
+      
     - condition: (impl(ghc >=8.0.0)) && (impl(ghc <8.1.0))
       c-sources: src-c-8.0/hschooks.c
       include-dirs:
@@ -74,6 +79,10 @@ executables:
       c-sources: src-c-8.4/hschooks.c
       include-dirs:
       - src-c-8.4/
+    - condition: (impl(ghc >=8.6.0)) && (impl(ghc <8.7.0))
+      c-sources: src-c-8.6/hschooks.c
+      include-dirs:
+      - src-c-8.6/
     - condition: os(windows)
       then:
         dependencies:

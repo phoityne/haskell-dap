@@ -1,4 +1,9 @@
 
+20181201 haskell-dap-0.0.10.0
+
+  * [ADD] Support ghc-8.6
+
+
 20181014 haskell-dap-0.0.9.0
 
   * [MODIFY] logpoint output to console.
