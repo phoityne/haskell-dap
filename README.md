@@ -7,15 +7,14 @@ The goal is "let GHCi speak [DAP](https://code.visualstudio.com/docs/extensions/
 
 ## Information
 
-* [2018/10/21] Release haskel-dap-0.0.9.0.  
-  * [MODIFY] logpoint output change to console.
-  * [FIX][[1](https://github.com/phoityne/hdx4vsc/issues/1)]debugger does not work with vscode-1.28
+* [2018/12/15] Release haskel-dap-0.0.10.0.  
+  * [MODIFY] supported ghc-8.6
 
 
 ## Limitation
 Currently this project is an experimental design and implementation.
 
-* supporting ghc-8.0, ghc-8.2, ghc-8.4
+* supporting ghc-8.0, ghc-8.2, ghc-8.4, ghc-8.6
 * need stack project.
 * checked on windows7, centos7
 
