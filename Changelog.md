@@ -1,4 +1,9 @@
 
+20181201 haskell-dap-0.0.11.0
+
+  * [ADD] GHCi.DAP module. GHCi.DAP.IFData is deprecated.
+
+
 20181201 haskell-dap-0.0.10.0
 
   * [ADD] Support ghc-8.6

@@ -1,11 +1,11 @@
 name: haskell-dap
-version: '0.0.10.0'
+version: '0.0.11.0'
 synopsis: haskell-dap is a GHCi having DAP interface.
 description: Please see README.md
 category: Development
 author: phoityne_hs
 maintainer: phoityne.hs@gmail.com
-copyright: 2017-2018 phoityne_hs
+copyright: 2017-2019 phoityne_hs
 license: BSD3
 homepage: https://github.com/phoityne/haskell-dap
 bug-reports: https://github.com/phoityne/haskell-dap/issues
@@ -23,9 +23,12 @@ extra-source-files:
 library:
   source-dirs: src
   exposed-modules:
+  - GHCi.DAP
   - GHCi.DAP.IFData
   dependencies:
   - base >=4.7 && <5
+  - containers
+
 executables:
   haskell-dap:
     main: Main.hs
