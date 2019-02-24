@@ -5,6 +5,10 @@ Description : Implementation of DAP interface data type.
 Copyright   : 2017-2018 phoityne_hs
 License     : BSD3
 
+__This module will be deprecated.__
+
+__@see : GHCi.DAP module.__
+
 Implementation of DAP interface data type.
 
 @see : https://github.com/Microsoft/vscode-debugadapter-node/blob/master/protocol/src/debugProtocol.ts
