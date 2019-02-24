@@ -20,6 +20,8 @@ extra-source-files:
 - src-c-8.4/PosixSource.h
 - src-c-8.6/HsVersions.h
 - src-c-8.6/PosixSource.h
+
+
 library:
   source-dirs: src
   exposed-modules:
@@ -91,7 +93,6 @@ executables:
         dependencies:
         - Win32
       else:
-        ghc-options: -dynamic
         dependencies:
         - unix
         
