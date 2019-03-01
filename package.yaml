@@ -1,6 +1,6 @@
 name: haskell-dap
 version: '0.0.11.0'
-synopsis: haskell-dap is a GHCi having DAP interface.
+synopsis: Haskell implementation of the DAP interface data.
 description: Please see README.md
 category: Development
 author: phoityne_hs

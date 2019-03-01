@@ -4,11 +4,11 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 3b698e59677909b984c5c0f491f3e5733ad769a5d23e3e5a06cf6d81dc97d8a3
+-- hash: b3a42e5025c9e19a3432a6cc79a7e3782a79bb1b2752afdccb6ec1f409a6fccb
 
 name:           haskell-dap
 version:        0.0.11.0
-synopsis:       haskell-dap is a GHCi having DAP interface.
+synopsis:       Haskell implementation of the DAP interface data.
 description:    Please see README.md
 category:       Development
 homepage:       https://github.com/phoityne/haskell-dap
