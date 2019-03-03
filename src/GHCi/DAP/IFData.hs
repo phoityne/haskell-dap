@@ -7,7 +7,7 @@ License     : BSD3
 
 __This module will be deprecated.__
 
-__@see : GHCi.DAP module.__
+__@see : Haskell.DAP module.__
 
 Implementation of DAP interface data type.
 

@@ -1,6 +1,6 @@
 
 {-|
-Module      : GHCi.DAP
+Module      : Haskell.DAP
 Description : Implementation of DAP interface data type.
 Copyright   : 2017-2019 phoityne_hs
 License     : BSD3
@@ -12,7 +12,7 @@ Implementation of DAP interface data type.
 @see : https://github.com/Microsoft/vscode-debugadapter-node/blob/master/protocol/src/debugProtocol.ts
 
 -}
-module GHCi.DAP (
+module Haskell.DAP (
 
     -- * commons
     _THREAD_ID

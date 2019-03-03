@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: b3a42e5025c9e19a3432a6cc79a7e3782a79bb1b2752afdccb6ec1f409a6fccb
+-- hash: 915a08146154923fec2684d6e8bd501f8a762c0486c3e7734de2bc79406cd8bf
 
 name:           haskell-dap
-version:        0.0.11.0
+version:        0.0.12.0
 synopsis:       Haskell implementation of the DAP interface data.
 description:    Please see README.md
 category:       Development
@@ -33,7 +33,7 @@ extra-source-files:
 
 library
   exposed-modules:
-      GHCi.DAP
+      Haskell.DAP
       GHCi.DAP.IFData
   other-modules:
       Paths_haskell_dap
@@ -59,7 +59,7 @@ executable haskell-dap
   cc-options: -fPIC
   build-depends:
       array
-    , base
+    , base >=4.7 && <5
     , bytestring
     , containers
     , deepseq

@@ -1,5 +1,5 @@
 name: haskell-dap
-version: '0.0.11.0'
+version: '0.0.12.0'
 synopsis: Haskell implementation of the DAP interface data.
 description: Please see README.md
 category: Development
@@ -25,7 +25,7 @@ extra-source-files:
 library:
   source-dirs: src
   exposed-modules:
-  - GHCi.DAP
+  - Haskell.DAP
   - GHCi.DAP.IFData
   dependencies:
   - base >=4.7 && <5
@@ -45,7 +45,7 @@ executables:
     cc-options: -fPIC
     cpp-options: -DGHCI
     dependencies:
-    - base
+    - base >=4.7 && <5
     - ghc
     - ghci
     - ghc-paths
