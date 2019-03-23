@@ -1,7 +1,7 @@
 
-20190402 haskell-dap-0.0.13.0
+20190324 haskell-dap-0.0.13.0
 
-  * [ADD] force inspect attribute to launch setting.
+  * [ADD] Add force inspect attribute to launch setting.
 
 
 20190303 haskell-dap-0.0.12.0
