@@ -673,9 +673,10 @@ data LaunchRequestArguments =
   , stopOnEntryLaunchRequestArguments  :: Bool       -- ^Phoityne specific argument. Stop at the debugged function entry point.
   , mainArgsLaunchRequestArguments     :: Maybe String         -- ^Phoityne specific argument. required. Arguments of main function.
   , ghciEnvLaunchRequestArguments      :: M.Map String String  -- ^Phoityne specific argument. required. Additional Environments while debugging.
-  , ghciInitialPromptLaunchRequestArguments  :: Maybe String   -- ^Phoityne specific argument. The ghci initial prompt.
+  , ghciInitialPromptLaunchRequestArguments :: Maybe String    -- ^Phoityne specific argument. The ghci initial prompt.
   , startupFuncLaunchRequestArguments  :: Maybe String         -- ^Phoityne specific argument. The debug entry function.
   , startupArgsLaunchRequestArguments  :: Maybe String         -- ^Phoityne specific argument. Arguments of the debug entry function.
+  , forceInspectLaunchRequestArguments :: Maybe Bool           -- ^Phoityne specific argument. Inspect variable force.
   } deriving (Show, Read, Eq)
 
 

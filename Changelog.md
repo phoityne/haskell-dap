@@ -1,4 +1,9 @@
 
+20190402 haskell-dap-0.0.13.0
+
+  * [ADD] force inspect attribute to launch setting.
+
+
 20190303 haskell-dap-0.0.12.0
 
   * [FIX] move GHCi.DAP module to Haskell.DAP module.
