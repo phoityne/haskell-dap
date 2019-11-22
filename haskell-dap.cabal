@@ -1,13 +1,13 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.31.1.
+-- This file has been generated from package.yaml by hpack version 0.31.2.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: e1646d532d6d7854f52d8e8f6c2454c4e6402a856e7ffd1371398f82de818c14
+-- hash: 7b8395261e2ed11463fc3d8a88e7842ec0425cff18777a5eea757ce2d93eb518
 
 name:           haskell-dap
-version:        0.0.13.0
+version:        0.0.14.0
 synopsis:       Haskell implementation of the DAP interface data.
 description:    Please see README.md
 category:       Development

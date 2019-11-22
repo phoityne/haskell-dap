@@ -35,7 +35,7 @@ module Haskell.DAP (
   , defaultInitializeResponse
   , InitializeResponseBody(..)
   , defaultInitializeResponseBody
-  
+
     -- * disconnect
   , DisconnectRequest(..)
   , DisconnectRequestArguments(..)
@@ -212,7 +212,7 @@ _THREAD_ID = 0
 --
 data Request =
   Request {
-    seqRequest       :: Int     -- ^Sequence number. 
+    seqRequest       :: Int     -- ^Sequence number.
   , typeRequest      :: String  -- ^Message type. Values: 'request', 'response', 'event', etc.
   , commandRequest   :: String  -- ^The command to execute
   } deriving (Show, Read, Eq)
@@ -225,7 +225,7 @@ defaultRequest = Request {
     seqRequest     = 0
   , typeRequest    = "request"
   , commandRequest = ""
-  } 
+  }
 
 
 -- |
@@ -233,17 +233,17 @@ defaultRequest = Request {
 --
 data Response =
   Response {
-    seqResponse         :: Int     -- ^Sequence number. 
+    seqResponse         :: Int     -- ^Sequence number.
   , typeResponse        :: String  -- ^Message type. Values: 'request', 'response', 'event', etc.
   , request_seqResponse :: Int     -- ^Sequence number of the corresponding request.
-  , successResponse     :: Bool    -- ^Outcome of the request. 
-  , commandResponse     :: String  -- ^The command requested. 
+  , successResponse     :: Bool    -- ^Outcome of the request.
+  , commandResponse     :: String  -- ^The command requested.
   , messageResponse     :: String  -- ^Contains error message if success == false.
   } deriving (Show, Read, Eq)
 
 
 -- |
---   A ColumnDescriptor specifies what module attribute to show in a column of the ModulesView, 
+--   A ColumnDescriptor specifies what module attribute to show in a column of the ModulesView,
 --
 --   how to format it, and what the column's label should be.
 --
@@ -251,7 +251,7 @@ data Response =
 --
 data ColumnDescriptor =
   ColumnDescriptor {
-    attributeNameColumnDescriptor :: String        -- ^Name of the attribute rendered in this column. 
+    attributeNameColumnDescriptor :: String        -- ^Name of the attribute rendered in this column.
   , labelColumnDescriptor         :: String        -- ^Header UI label of column.
   , formatColumnDescriptor        :: Maybe String  -- ^Format to use for the rendered values in this column. TBD how the format strings looks like.
   , typeColumnDescriptor          :: Maybe String  -- ^Datatype of values in this column.  Defaults to 'string' if not specified. 'string' | 'number' | 'boolean' | 'unixTimestampUTC';
@@ -394,7 +394,7 @@ data InitializeResponse =
   , typeInitializeResponse        :: String  -- ^One of "request", "response", or "event"
   , request_seqInitializeResponse :: Int     -- ^Sequence number of the corresponding request
   , successInitializeResponse     :: Bool    -- ^Outcome of the request
-  , commandInitializeResponse     :: String  -- ^The command requested 
+  , commandInitializeResponse     :: String  -- ^The command requested
   , messageInitializeResponse     :: String  -- ^Contains error message if success == false.
   , bodyInitializeResponse        :: InitializeResponseBody  -- ^The capabilities of this debug adapter
   } deriving (Show, Read, Eq)
@@ -429,7 +429,7 @@ data InitializeResponseBody =
   , supportsSetVariableInitializeResponseBody               :: Bool  -- ^The debug adapter supports setting a variable to a value.
   , supportsRestartFrameInitializeResponseBody              :: Bool  -- ^The debug adapter supports restarting a frame.
   , supportsGotoTargetsRequestInitializeResponseBody        :: Bool  -- ^The debug adapter supports the gotoTargetsRequest.
-  , supportsStepInTargetsRequestInitializeResponseBody      :: Bool  -- ^The debug adapter supports the stepInTargetsRequest. 
+  , supportsStepInTargetsRequestInitializeResponseBody      :: Bool  -- ^The debug adapter supports the stepInTargetsRequest.
   , supportsCompletionsRequestInitializeResponseBody        :: Bool  -- ^The debug adapter supports the completionsRequest.
   , supportsModulesRequestInitializeResponseBody            :: Bool  -- ^The debug adapter supports the modules request.
   , additionalModuleColumnsInitializeResponseBody           :: [ColumnDescriptor] -- ^The set of additional module information exposed by the debug adapter.
@@ -467,13 +467,13 @@ defaultInitializeResponseBody = InitializeResponseBody {
 -- |
 --   Disconnect request; value of command field is 'disconnect'.
 --
---	The 'disconnect' request is sent from the client to the debug adapter in order to stop debugging. 
+--	The 'disconnect' request is sent from the client to the debug adapter in order to stop debugging.
 --
 --  It asks the debug adapter to disconnect from the debuggee and to terminate the debug adapter.
 --
---  If the debuggee has been started with the 'launch' request, the 'disconnect' request terminates the debuggee. 
+--  If the debuggee has been started with the 'launch' request, the 'disconnect' request terminates the debuggee.
 --
---  If the 'attach' request was used to connect to the debuggee, 'disconnect' does not terminate the debuggee. 
+--  If the 'attach' request was used to connect to the debuggee, 'disconnect' does not terminate the debuggee.
 --
 -- This behavior can be controlled with the 'terminateDebuggee' argument (if supported by the debug adapter).
 --
@@ -504,7 +504,7 @@ data DisconnectResponse =
   , typeDisconnectResponse        :: String  -- ^One of "request", "response", or "event"
   , request_seqDisconnectResponse :: Int     -- ^Sequence number of the corresponding request
   , successDisconnectResponse     :: Bool    -- ^Outcome of the request
-  , commandDisconnectResponse     :: String  -- ^The command requested 
+  , commandDisconnectResponse     :: String  -- ^The command requested
   , messageDisconnectResponse     :: String  -- ^Contains error message if success == false.
   } deriving (Show, Read, Eq)
 
@@ -548,7 +548,7 @@ data PauseRequest =
 --
 data PauseRequestArguments =
   PauseArguments {
-    threadIdPauseRequestArguments :: Int  -- ^Pause execution for this thread. 
+    threadIdPauseRequestArguments :: Int  -- ^Pause execution for this thread.
   } deriving (Show, Read, Eq)
 
 
@@ -561,7 +561,7 @@ data PauseResponse =
   , typePauseResponse        :: String  -- ^One of "request", "response", or "event"
   , request_seqPauseResponse :: Int     -- ^Sequence number of the corresponding request
   , successPauseResponse     :: Bool    -- ^Outcome of the request
-  , commandPauseResponse     :: String  -- ^The command requested 
+  , commandPauseResponse     :: String  -- ^The command requested
   , messagePauseResponse     :: String  -- ^Contains error message if success == false.
   } deriving (Show, Read, Eq)
 
@@ -600,7 +600,7 @@ data TerminateRequest =
 
 
 -- |
---   Arguments for 'terminate' request. 
+--   Arguments for 'terminate' request.
 --
 data TerminateRequestArguments =
   TerminateArguments {
@@ -617,7 +617,7 @@ data TerminateResponse =
   , typeTerminateResponse        :: String  -- ^One of "request", "response", or "event"
   , request_seqTerminateResponse :: Int     -- ^Sequence number of the corresponding request
   , successTerminateResponse     :: Bool    -- ^Outcome of the request
-  , commandTerminateResponse     :: String  -- ^The command requested 
+  , commandTerminateResponse     :: String  -- ^The command requested
   , messageTerminateResponse     :: String  -- ^Contains error message if success == false.
   } deriving (Show, Read, Eq)
 
@@ -681,7 +681,7 @@ data LaunchRequestArguments =
 
 
 -- |
---   Response to 'launch' request. This is just an acknowledgement, so no body field is required. 
+--   Response to 'launch' request. This is just an acknowledgement, so no body field is required.
 --
 data LaunchResponse =
   LaunchResponse {
@@ -689,7 +689,7 @@ data LaunchResponse =
   , typeLaunchResponse        :: String  -- ^One of "request", "response", or "event"
   , request_seqLaunchResponse :: Int     -- ^Sequence number of the corresponding request
   , successLaunchResponse     :: Bool    -- ^Outcome of the request
-  , commandLaunchResponse     :: String  -- ^The command requested 
+  , commandLaunchResponse     :: String  -- ^The command requested
   , messageLaunchResponse     :: String  -- ^Contains error message if success == false.
   } deriving (Show, Read, Eq)
 
@@ -717,7 +717,7 @@ defaultLaunchResponse = LaunchResponse {
 data SourceBreakpoint =
   SourceBreakpoint {
     lineSourceBreakpoint         :: Int           -- ^The source line of the breakpoint.
-  , columnSourceBreakpoint       :: Maybe Int     -- ^An optional source column of the breakpoint. 
+  , columnSourceBreakpoint       :: Maybe Int     -- ^An optional source column of the breakpoint.
   , conditionSourceBreakpoint    :: Maybe String  -- ^An optional expression for conditional breakpoints.
   , hitConditionSourceBreakpoint :: Maybe String  -- ^An optional expression that controls how many hits of the breakpoint are ignored. The backend is expected to interpret the expression as needed.
   , logMessageSourceBreakpoint   :: Maybe String  -- ^If this attribute exists and is non-empty, the backend must not 'break' (stop) but log the message instead. Expressions within {} are interpolated.
@@ -747,7 +747,7 @@ data SetBreakpointsRequest =
 --
 data SetBreakpointsRequestArguments =
   SetBreakpointsRequestArguments {
-    sourceSetBreakpointsRequestArguments         :: Source              -- ^The source location of the breakpoints; either source.path or source.reference must be specified. 
+    sourceSetBreakpointsRequestArguments         :: Source              -- ^The source location of the breakpoints; either source.path or source.reference must be specified.
   , breakpointsSetBreakpointsRequestArguments    :: [SourceBreakpoint]  -- ^The code locations of the breakpoints.
   } deriving (Show, Read, Eq)
 
@@ -770,7 +770,7 @@ data SetBreakpointsResponse =
   , typeSetBreakpointsResponse        :: String  -- ^One of "request", "response", or "event"
   , request_seqSetBreakpointsResponse :: Int     -- ^Sequence number of the corresponding request
   , successSetBreakpointsResponse     :: Bool    -- ^Outcome of the request
-  , commandSetBreakpointsResponse     :: String  -- ^The command requested 
+  , commandSetBreakpointsResponse     :: String  -- ^The command requested
   , messageSetBreakpointsResponse     :: String  -- ^Contains error message if success == false.
   , bodySetBreakpointsResponse        :: SetBreakpointsResponseBody -- ^The body of SetBreakpointsResponse.
   } deriving (Show, Read, Eq)
@@ -791,13 +791,13 @@ defaultSetBreakpointsResponse = SetBreakpointsResponse {
 
 -- |
 --   Response to "setBreakpoints" request.
--- 
+--
 --   Returned is information about each breakpoint created by this request.
--- 
+--
 --   This includes the actual code location and whether the breakpoint could be verified.
--- 
+--
 --   The breakpoints returned are in the same order as the elements of the 'breakpoints'
--- 
+--
 --   (or the deprecated 'lines') in the SetBreakpointsRequestArguments.
 --
 data SetBreakpointsResponseBody =
@@ -823,7 +823,7 @@ defaultSetBreakpointsResponseBody = SetBreakpointsResponseBody {
 --
 data FunctionBreakpoint =
   FunctionBreakpoint {
-    nameFunctionBreakpoint         :: String        -- The name of the function. 
+    nameFunctionBreakpoint         :: String        -- The name of the function.
   , conditionFunctionBreakpoint    :: Maybe String  -- An optional expression for conditional breakpoints.
   , hitConditionFunctionBreakpoint :: Maybe String  -- An optional expression that controls how many hits of the breakpoint are ignored. The backend is expected to interpret the expression as needed.
   } deriving (Show, Read, Eq)
@@ -831,11 +831,11 @@ data FunctionBreakpoint =
 
 -- |
 --   SetFunctionBreakpoints request; value of command field is "setFunctionBreakpoints".
--- 
+--
 --   Sets multiple function breakpoints and clears all previous function breakpoints.
--- 
+--
 --   To clear all function breakpoint, specify an empty array.
--- 
+--
 --   When a function breakpoint is hit, a StoppedEvent (event type 'function breakpoint') is generated.
 --
 data SetFunctionBreakpointsRequest =
@@ -848,7 +848,7 @@ data SetFunctionBreakpointsRequest =
 
 
 -- |
---   Arguments for 'setFunctionBreakpoints' request.  
+--   Arguments for 'setFunctionBreakpoints' request.
 --
 data SetFunctionBreakpointsRequestArguments =
   SetFunctionBreakpointsRequestArguments {
@@ -865,7 +865,7 @@ data SetFunctionBreakpointsResponse =
   , typeSetFunctionBreakpointsResponse        :: String  -- ^One of "request", "response", or "event"
   , request_seqSetFunctionBreakpointsResponse :: Int     -- ^Sequence number of the corresponding request
   , successSetFunctionBreakpointsResponse     :: Bool    -- ^Outcome of the request
-  , commandSetFunctionBreakpointsResponse     :: String  -- ^The command requested 
+  , commandSetFunctionBreakpointsResponse     :: String  -- ^The command requested
   , messageSetFunctionBreakpointsResponse     :: String  -- ^Contains error message if success == false.
   , bodySetFunctionBreakpointsResponse        :: SetFunctionBreakpointsResponseBody  -- ^The body of the SetFunctionBreakpointsResponse
   } deriving (Show, Read, Eq)
@@ -887,7 +887,7 @@ defaultSetFunctionBreakpointsResponse = SetFunctionBreakpointsResponse {
 
 -- |
 --  Response to 'setFunctionBreakpoints' request.
--- 
+--
 --  Returned is information about each breakpoint created by this request.
 --
 data SetFunctionBreakpointsResponseBody =
@@ -943,7 +943,7 @@ data SetExceptionBreakpointsResponse =
   , typeSetExceptionBreakpointsResponse        :: String  -- ^One of "request", "response", or "event"
   , request_seqSetExceptionBreakpointsResponse :: Int     -- ^Sequence number of the corresponding request
   , successSetExceptionBreakpointsResponse     :: Bool    -- ^Outcome of the request
-  , commandSetExceptionBreakpointsResponse     :: String  -- ^The command requested 
+  , commandSetExceptionBreakpointsResponse     :: String  -- ^The command requested
   , messageSetExceptionBreakpointsResponse     :: String  -- ^Contains error message if success == false.
   } deriving (Show, Read, Eq)
 
@@ -967,9 +967,9 @@ defaultSetExceptionBreakpointsResponse = SetExceptionBreakpointsResponse {
 
 -- |
 --   ConfigurationDone request; value of command field is 'configurationDone'.
--- 
+--
 --   The client of the debug protocol must send this request at the end of the sequence of configuration requests
--- 
+--
 --   (which was started by the InitializedEvent).
 --
 data ConfigurationDoneRequest =
@@ -989,7 +989,7 @@ data ConfigurationDoneResponse =
   , typeConfigurationDoneResponse        :: String  -- ^One of "request", "response", or "event"
   , request_seqConfigurationDoneResponse :: Int     -- ^Sequence number of the corresponding request
   , successConfigurationDoneResponse     :: Bool    -- ^Outcome of the request
-  , commandConfigurationDoneResponse     :: String  -- ^The command requested 
+  , commandConfigurationDoneResponse     :: String  -- ^The command requested
   , messageConfigurationDoneResponse     :: String  -- ^Contains error message if success == false.
   } deriving (Show, Read, Eq)
 
@@ -1025,7 +1025,7 @@ data ThreadsRequest =
 
 
 -- |
---  Response to "threads" request. 
+--  Response to "threads" request.
 --
 data ThreadsResponse =
   ThreadsResponse {
@@ -1033,7 +1033,7 @@ data ThreadsResponse =
   , typeThreadsResponse        :: String  -- ^One of "request", "response", or "event"
   , request_seqThreadsResponse :: Int     -- ^Sequence number of the corresponding request
   , successThreadsResponse     :: Bool    -- ^Outcome of the request
-  , commandThreadsResponse     :: String  -- ^The command requested 
+  , commandThreadsResponse     :: String  -- ^The command requested
   , messageThreadsResponse     :: String  -- ^Contains error message if success == false.
   , bodyThreadsResponse        :: ThreadsResponseBody -- ^The body of ThreadsResponse
   } deriving (Show, Read, Eq)
@@ -1075,8 +1075,8 @@ defaultThreadsResponseBody = ThreadsResponseBody [defaultThread]
 --
 data Thread =
   Thread {
-    idThread   :: Int     -- ^Unique identifier for the thread. 
-  , nameThread :: String  -- ^A name of the thread. 
+    idThread   :: Int     -- ^Unique identifier for the thread.
+  , nameThread :: String  -- ^A name of the thread.
   } deriving (Show, Read, Eq)
 
 
@@ -1111,7 +1111,7 @@ data StackTraceRequestArguments =
   StackTraceRequestArguments {
     threadIdStackTraceRequestArguments   :: Int        -- ^Retrieve the stacktrace for this thread.
   , startFrameStackTraceRequestArguments :: Maybe Int  -- ^The index of the first frame to return; if omitted frames start at 0.
-  , levelsStackTraceRequestArguments     :: Int        -- ^The maximum number of frames to return. If levels is not specified or 0, all frames are returned.
+  , levelsStackTraceRequestArguments     :: Maybe Int  -- ^The maximum number of frames to return. If levels is not specified or 0, all frames are returned.
   } deriving (Show, Read, Eq)
 
 
@@ -1124,7 +1124,7 @@ data StackFrame =
   , nameStackFrame      :: String  -- ^The name of the stack frame, typically a method name.
   , sourceStackFrame    :: Source  -- ^The optional source of the frame.
   , lineStackFrame      :: Int     -- ^The line within the file of the frame. If source is null or doesn't exist, line is 0 and must be ignored.
-  , columnStackFrame    :: Int     -- ^The column within the line. If source is null or doesn't exist, column is 0 and must be ignored. 
+  , columnStackFrame    :: Int     -- ^The column within the line. If source is null or doesn't exist, column is 0 and must be ignored.
   , endLineStackFrame   :: Int     -- ^An optional end line of the range covered by the stack frame.
   , endColumnStackFrame :: Int     -- ^An optional end column of the range covered by the stack frame.
   } deriving (Show, Read, Eq)
@@ -1152,7 +1152,7 @@ data StackTraceResponse =
   , typeStackTraceResponse        :: String  -- ^One of "request", "response", or "event"
   , request_seqStackTraceResponse :: Int     -- ^Sequence number of the corresponding request
   , successStackTraceResponse     :: Bool    -- ^Outcome of the request
-  , commandStackTraceResponse     :: String  -- ^The command requested 
+  , commandStackTraceResponse     :: String  -- ^The command requested
   , messageStackTraceResponse     :: String  -- ^Contains error message if success == false.
   , bodyStackTraceResponse        :: StackTraceResponseBody  -- ^The body of StackTraceResponse
   } deriving (Show, Read, Eq)
@@ -1175,7 +1175,7 @@ defaultStackTraceResponse = StackTraceResponse {
 data StackTraceResponseBody =
   StackTraceResponseBody {
     stackFramesStackTraceResponseBody :: [StackFrame]  -- ^The frames of the stackframe. If the array has length zero, there are no stackframes available. This means that there is no location information available.
-  , totalFramesStackTraceResponseBody :: Int           -- ^The total number of frames available. 
+  , totalFramesStackTraceResponseBody :: Int           -- ^The total number of frames available.
   } deriving (Show, Read, Eq)
 
 -- |
@@ -1223,7 +1223,7 @@ data ScopesResponse =
   , typeScopesResponse        :: String  -- ^One of "request", "response", or "event"
   , request_seqScopesResponse :: Int     -- ^Sequence number of the corresponding request
   , successScopesResponse     :: Bool    -- ^Outcome of the request
-  , commandScopesResponse     :: String  -- ^The command requested 
+  , commandScopesResponse     :: String  -- ^The command requested
   , messageScopesResponse     :: String  -- ^Contains error message if success == false.
   , bodyScopesResponse        :: ScopesResponseBody  -- ^The body of ScopesResponse.
   } deriving (Show, Read, Eq)
@@ -1258,11 +1258,11 @@ defaultScopesResponseBody = ScopesResponseBody {
   }
 
 -- |
---   A Scope is a named container for variables. Optionally a scope can map to a source or a range within a source. 
+--   A Scope is a named container for variables. Optionally a scope can map to a source or a range within a source.
 --
 data Scope =
   Scope {
-    nameScope               :: String     -- ^Name of the scope such as 'Arguments', 'Locals'. 
+    nameScope               :: String     -- ^Name of the scope such as 'Arguments', 'Locals'.
   , variablesReferenceScope :: Int        -- ^The variables of this scope can be retrieved by passing the value of variablesReference to the VariablesRequest.
   , namedVariablesScope     :: Maybe Int  -- ^The number of named variables in this scope. The client can use this optional information to present the variables in a paged UI and fetch them in chunks.
   , indexedVariablesScope   :: Maybe Int  -- ^The number of indexed variables in this scope. The client can use this optional information to present the variables in a paged UI and fetch them in chunks.
@@ -1300,7 +1300,7 @@ data VariablesRequest =
 
 
 -- |
---  Response to "variables" request. 
+--  Response to "variables" request.
 --
 data VariablesResponse =
   VariablesResponse {
@@ -1308,7 +1308,7 @@ data VariablesResponse =
   , typeVariablesResponse        :: String  -- ^One of "request", "response", or "event"
   , request_seqVariablesResponse :: Int     -- ^Sequence number of the corresponding request
   , successVariablesResponse     :: Bool    -- ^Outcome of the request
-  , commandVariablesResponse     :: String  -- ^The command requested 
+  , commandVariablesResponse     :: String  -- ^The command requested
   , messageVariablesResponse     :: String  -- ^Contains error message if success == false.
   , bodyVariablesResponse        :: VariablesResponseBody  -- ^The body of VariablesResponse
   } deriving (Show, Read, Eq)
@@ -1329,7 +1329,7 @@ defaultVariablesResponse = VariablesResponse {
 
 
 -- |
---   Arguments for 'variables' request. 
+--   Arguments for 'variables' request.
 --
 data VariablesRequestArguments =
   VariablesRequestArguments {
@@ -1370,7 +1370,7 @@ data Variable =
   } deriving (Show, Read, Eq)
 
 -- |
--- 
+--
 defaultVariable :: Variable
 defaultVariable = Variable {
     nameVariable = ""
@@ -1390,13 +1390,13 @@ data VariablePresentationHint =
   VariablePresentationHint {
     {-|
       The kind of variable. Before introducing additional values, try to use the listed values.
-      
+
       Values:
 
       'property': Indicates that the object is a property.
 
       'method': Indicates that the object is a method.
-      
+
 			'class': Indicates that the object is a class.
 
       'data': Indicates that the object is data.
@@ -1416,7 +1416,7 @@ data VariablePresentationHint =
     kindVariablePresentationHint       :: String
     {-|
 		  Set of attributes represented as an array of strings. Before introducing additional values, try to use the listed values.
-			Values: 
+			Values:
 
       'static': Indicates that the object is static.
 
@@ -1482,7 +1482,7 @@ defaultContinueRequestArguments = ContinueRequestArguments {
 
 
 -- |
---   Response to "continue" request. This is just an acknowledgement, so no body field is required. 
+--   Response to "continue" request. This is just an acknowledgement, so no body field is required.
 --
 data ContinueResponse =
   ContinueResponse {
@@ -1490,7 +1490,7 @@ data ContinueResponse =
   , typeContinueResponse        :: String  -- ^One of "request", "response", or "event"
   , request_seqContinueResponse :: Int     -- ^Sequence number of the corresponding request
   , successContinueResponse     :: Bool    -- ^Outcome of the request
-  , commandContinueResponse     :: String  -- ^The command requested 
+  , commandContinueResponse     :: String  -- ^The command requested
   , messageContinueResponse     :: String  -- ^Contains error message if success == false.
   } deriving (Show, Read, Eq)
 
@@ -1533,7 +1533,7 @@ data NextRequest =
 --
 data NextRequestArguments =
   NextRequestArguments {
-    threadIdNextRequestArguments :: Int -- ^Execute 'next' for this thread. 
+    threadIdNextRequestArguments :: Int -- ^Execute 'next' for this thread.
   } deriving (Show, Read, Eq)
 
 
@@ -1546,7 +1546,7 @@ data NextResponse =
   , typeNextResponse        :: String  -- ^One of "request", "response", or "event"
   , request_seqNextResponse :: Int     -- ^Sequence number of the corresponding request
   , successNextResponse     :: Bool    -- ^Outcome of the request
-  , commandNextResponse     :: String  -- ^The command requested 
+  , commandNextResponse     :: String  -- ^The command requested
   , messageNextResponse     :: String  -- ^Contains error message if success == false.
   } deriving (Show, Read, Eq)
 
@@ -1585,7 +1585,7 @@ data StepInRequest =
 
 
 -- |
---   Arguments for 'stepIn' request. 
+--   Arguments for 'stepIn' request.
 --
 data StepInRequestArguments =
   StepInRequestArguments {
@@ -1602,7 +1602,7 @@ data StepInResponse =
   , typeStepInResponse        :: String  -- ^One of "request", "response", or "event"
   , request_seqStepInResponse :: Int     -- ^Sequence number of the corresponding request
   , successStepInResponse     :: Bool    -- ^Outcome of the request
-  , commandStepInResponse     :: String  -- ^The command requested 
+  , commandStepInResponse     :: String  -- ^The command requested
   , messageStepInResponse     :: String  -- ^Contains error message if success == false.
   } deriving (Show, Read, Eq)
 
@@ -1659,8 +1659,8 @@ defaultEvaluateResponse = EvaluateResponse {
 --
 data EvaluateRequestArguments =
   EvaluateRequestArguments {
-    expressionEvaluateRequestArguments :: String     -- ^The expression to evaluate. 
-  , frameIdEvaluateRequestArguments    :: Maybe Int  -- ^Evaluate the expression in the scope of this stack frame. If not specified, the expression is evaluated in the global scope. 
+    expressionEvaluateRequestArguments :: String     -- ^The expression to evaluate.
+  , frameIdEvaluateRequestArguments    :: Maybe Int  -- ^Evaluate the expression in the scope of this stack frame. If not specified, the expression is evaluated in the global scope.
 
   {-|
     The context in which the evaluate request is run.
@@ -1670,8 +1670,8 @@ data EvaluateRequestArguments =
     'repl': evaluate is run from REPL console.
 
     'hover': evaluate is run from a data hover.
-    
-    etc. 
+
+    etc.
   -}
   , contextEvaluateRequestArguments    :: Maybe String
     } deriving (Show, Read, Eq)
@@ -1686,19 +1686,19 @@ data EvaluateResponse =
   , typeEvaluateResponse        :: String  -- ^One of "request", "response", or "event"
   , request_seqEvaluateResponse :: Int     -- ^Sequence number of the corresponding request
   , successEvaluateResponse     :: Bool    -- ^Outcome of the request
-  , commandEvaluateResponse     :: String  -- ^The command requested 
+  , commandEvaluateResponse     :: String  -- ^The command requested
   , messageEvaluateResponse     :: String  -- ^Contains error message if success == false.
   , bodyEvaluateResponse        :: EvaluateResponseBody  -- The body of EvaluateResponse
   } deriving (Show, Read, Eq)
 
 
 -- |
---    Response to "evaluate" request. 
+--    Response to "evaluate" request.
 --
 data EvaluateResponseBody =
   EvaluateResponseBody {
     resultEvaluateResponseBody             :: String -- ^The result of the evaluate.
-  , typeEvaluateResponseBody               :: String -- ^The optional type of the evaluate result. 
+  , typeEvaluateResponseBody               :: String -- ^The optional type of the evaluate result.
   , presentationHintEvaluateResponseBody   :: Maybe VariablePresentationHint -- ^Properties of a evaluate result that can be used to determine how to render the result in the UI.
   , variablesReferenceEvaluateResponseBody :: Int       -- ^If variablesReference is > 0, the evaluate result is structured and its children can be retrieved by passing variablesReference to the VariablesRequest.
   , namedVariablesEvaluateResponseBody     :: Maybe Int -- ^The number of named child variables. The client can use this optional information to present the variables in a paged UI and fetch them in chunks.
@@ -1739,13 +1739,13 @@ data CompletionsRequest =
 
 
 -- |
---   Arguments for 'completions' request. 
+--   Arguments for 'completions' request.
 --
 data CompletionsRequestArguments =
   CompletionsRequestArguments {
-    frameIdCompletionsRequestArguments :: Maybe Int  -- ^Returns completions in the scope of this stack frame. If not specified, the completions are returned for the global scope. 
+    frameIdCompletionsRequestArguments :: Maybe Int  -- ^Returns completions in the scope of this stack frame. If not specified, the completions are returned for the global scope.
   , textCompletionsRequestArguments :: String        -- ^One or more source lines. Typically this is the text a user has typed into the debug console before he asked for completion.
-  , columnCompletionsRequestArguments :: Int         -- ^The character position for which to determine the completion proposals. 
+  , columnCompletionsRequestArguments :: Int         -- ^The character position for which to determine the completion proposals.
   , lineCompletionsRequestArguments :: Maybe Int     -- ^An optional line for which to determine the completion proposals. If missing the first line of the text is assumed.
   } deriving (Show, Read, Eq)
 
@@ -1759,7 +1759,7 @@ data CompletionsResponse =
   , typeCompletionsResponse        :: String  -- ^One of "request", "response", or "event"
   , request_seqCompletionsResponse :: Int     -- ^Sequence number of the corresponding request
   , successCompletionsResponse     :: Bool    -- ^Outcome of the request
-  , commandCompletionsResponse     :: String  -- ^The command requested 
+  , commandCompletionsResponse     :: String  -- ^The command requested
   , messageCompletionsResponse     :: String  -- ^Contains error message if success == false.
   , bodyCompletionsResponse        :: CompletionsResponseBody  -- ^The body of CompletionsResponse
   } deriving (Show, Read, Eq)
@@ -1833,7 +1833,7 @@ defaultOutputEvent = OutputEvent 0 "event" "output" defaultOutputEventBody
 --
 data OutputEventBody =
   OutputEventBody {
-    categoryOutputEventBody :: String        -- ^The category of output (such as: 'console', 'stdout', 'stderr', 'telemetry'). If not specified, 'console' is assumed. 
+    categoryOutputEventBody :: String        -- ^The category of output (such as: 'console', 'stdout', 'stderr', 'telemetry'). If not specified, 'console' is assumed.
   , outputOutputEventBody   :: String        -- ^The output to report.
   , dataOutputEventBody     :: Maybe String  -- ^Optional data to report. For the 'telemetry' category the data will be sent to telemetry, for the other categories the data is shown in JSON format.
   } deriving (Show, Read, Eq)
@@ -2032,7 +2032,7 @@ data StoppedEventBody =
     reasonStoppedEventBody            :: String  -- ^The reason for the event.For backward compatibility this string is shown in the UI if the 'description' attribute is missing (but it must not be translated).Values: 'step', 'breakpoint', 'exception', 'pause', 'entry', etc.
   , descriptionStoppedEventBody       :: String  -- ^The full reason for the event, e.g. 'Paused on exception'. This string is shown in the UI as is.
   , threadIdStoppedEventBody          :: Int     -- ^The thread which was stopped.
-  , textStoppedEventBody              :: String  -- ^Additional information. E.g. if reason is 'exception', text contains the exception name. This string is shown in the UI. 
+  , textStoppedEventBody              :: String  -- ^Additional information. E.g. if reason is 'exception', text contains the exception name. This string is shown in the UI.
 
   {-|
      If allThreadsStopped is true, a debug adapter can announce that all threads have stopped.

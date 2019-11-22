@@ -1,5 +1,5 @@
 name: haskell-dap
-version: '0.0.13.0'
+version: '0.0.14.0'
 synopsis: Haskell implementation of the DAP interface data.
 description: Please see README.md
 category: Development
@@ -20,7 +20,6 @@ extra-source-files:
 - src-c-8.4/PosixSource.h
 - src-c-8.6/HsVersions.h
 - src-c-8.6/PosixSource.h
-
 
 library:
   source-dirs: src
@@ -71,7 +70,7 @@ executables:
       source-dirs: app-ghc-8.4
     - condition: (impl(ghc >=8.6.0)) && (impl(ghc <8.7.0))
       source-dirs: app-ghc-8.6
-      
+
     - condition: (impl(ghc >=8.0.0)) && (impl(ghc <8.1.0))
       c-sources: src-c-8.0/hschooks.c
       include-dirs:
@@ -95,4 +94,3 @@ executables:
       else:
         dependencies:
         - unix
-        
