@@ -1,6 +1,6 @@
 module Haskell.DAP.GHCi.Constant where
 
-  
+
 -- |
 --
 _DAP_HEADER :: String
@@ -21,12 +21,12 @@ _DAP_HEADER_OUTPUT_EVENT = "<<DAP_OUTPUT_EVENT>>"
 --
 _GHCi_SCOPE :: String
 _GHCi_SCOPE = "GHCi Local"
-    
+
 -- |
 --
 _GHCi_GLOBAL_SCOPE :: String
 _GHCi_GLOBAL_SCOPE = "GHCi Global"
-  
+
 -- |
 --
 _BINDING_INSPECT_DEPTH :: Int

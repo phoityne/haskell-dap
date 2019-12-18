@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 7b8395261e2ed11463fc3d8a88e7842ec0425cff18777a5eea757ce2d93eb518
+-- hash: b18bcfd88cc1a32afb15451421e87c2cc2e7225e0f2821075e9234aac41730e7
 
 name:           haskell-dap
 version:        0.0.14.0
@@ -32,9 +32,6 @@ extra-source-files:
     src-c-8.6/PosixSource.h
 
 library
-  exposed-modules:
-      Haskell.DAP
-      GHCi.DAP.IFData
   other-modules:
       Paths_haskell_dap
   hs-source-dirs:
@@ -42,40 +39,56 @@ library
   build-depends:
       base >=4.7 && <5
     , containers
+  if (impl(ghc >=8.8.1))
+    exposed-modules:
+        Haskell.DAP
+  if (impl(ghc >=8.0.0)) && (impl(ghc <8.8.0))
+    exposed-modules:
+        Haskell.DAP
+        GHCi.DAP.IFData
   default-language: Haskell2010
 
 executable haskell-dap
-  main-is: Main.hs
-  other-modules:
-      Haskell.DAP.GHCi.Command
-      Haskell.DAP.GHCi.Constant
-      Haskell.DAP.GHCi.Type
-      Haskell.DAP.GHCi.Utility
-      Paths_haskell_dap
-  hs-source-dirs:
-      app
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall -fno-warn-unused-do-bind -fno-warn-name-shadowing
   cpp-options: -DGHCI
   cc-options: -fPIC
-  build-depends:
-      array
-    , base >=4.7 && <5
-    , bytestring
-    , containers
-    , deepseq
-    , directory
-    , filepath
-    , ghc
-    , ghc-boot
-    , ghc-paths
-    , ghci
-    , haskeline
-    , haskell-dap
-    , process
-    , text
-    , time
-    , transformers
-  if (impl(ghc >=8.0.0)) && (impl(ghc <8.1.0))
+  if (impl(ghc >= 8.8.1))
+    main-is: MainDeprecated.hs
+    other-modules:
+        Haskell.DAP.Constant
+    hs-source-dirs:
+        app
+    build-depends:
+        base >=4.7 && <5
+  if (impl(ghc >= 8.0.0)) && (impl(ghc < 8.8.0))
+    main-is: Main.hs
+    other-modules:
+        Haskell.DAP.GHCi.Command
+        Haskell.DAP.GHCi.Constant
+        Haskell.DAP.GHCi.Type
+        Haskell.DAP.GHCi.Utility
+        Paths_haskell_dap
+    hs-source-dirs:
+        app
+    build-depends:
+        array
+      , base >=4.7 && <5
+      , bytestring
+      , containers
+      , deepseq
+      , directory
+      , filepath
+      , ghc
+      , ghc-boot
+      , ghc-paths
+      , ghci
+      , haskeline
+      , haskell-dap
+      , process
+      , text
+      , time
+      , transformers
+  if (impl(ghc >= 8.0.0)) && (impl(ghc < 8.1.0))
     other-modules:
         GHCi.UI
         GHCi.UI.Info
@@ -84,7 +97,11 @@ executable haskell-dap
         GHCMain
     hs-source-dirs:
         app-ghc-8.0
-  if (impl(ghc >=8.2.0)) && (impl(ghc <8.3.0))
+    include-dirs:
+        src-c-8.0/
+    c-sources:
+        src-c-8.0/hschooks.c
+  if (impl(ghc >= 8.2.0)) && (impl(ghc < 8.3.0))
     other-modules:
         GHCi.UI
         GHCi.UI.Info
@@ -93,7 +110,11 @@ executable haskell-dap
         GHCMain
     hs-source-dirs:
         app-ghc-8.2
-  if (impl(ghc >=8.4.0)) && (impl(ghc <8.5.0))
+    include-dirs:
+        src-c-8.2/
+    c-sources:
+        src-c-8.2/hschooks.c
+  if (impl(ghc >= 8.4.0)) && (impl(ghc < 8.5.0))
     other-modules:
         GHCi.UI
         GHCi.UI.Info
@@ -102,7 +123,11 @@ executable haskell-dap
         GHCMain
     hs-source-dirs:
         app-ghc-8.4
-  if (impl(ghc >=8.6.0)) && (impl(ghc <8.7.0))
+    include-dirs:
+        src-c-8.4/
+    c-sources:
+        src-c-8.4/hschooks.c
+  if (impl(ghc >= 8.6.0)) && (impl(ghc < 8.7.0))
     other-modules:
         GHCi.Leak
         GHCi.UI
@@ -112,22 +137,6 @@ executable haskell-dap
         GHCMain
     hs-source-dirs:
         app-ghc-8.6
-  if (impl(ghc >=8.0.0)) && (impl(ghc <8.1.0))
-    include-dirs:
-        src-c-8.0/
-    c-sources:
-        src-c-8.0/hschooks.c
-  if (impl(ghc >=8.2.0)) && (impl(ghc <8.3.0))
-    include-dirs:
-        src-c-8.2/
-    c-sources:
-        src-c-8.2/hschooks.c
-  if (impl(ghc >=8.4.0)) && (impl(ghc <8.5.0))
-    include-dirs:
-        src-c-8.4/
-    c-sources:
-        src-c-8.4/hschooks.c
-  if (impl(ghc >=8.6.0)) && (impl(ghc <8.7.0))
     include-dirs:
         src-c-8.6/
     c-sources:

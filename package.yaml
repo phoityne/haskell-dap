@@ -23,17 +23,21 @@ extra-source-files:
 
 library:
   source-dirs: src
-  exposed-modules:
-  - Haskell.DAP
-  - GHCi.DAP.IFData
+  when:
+  - condition: (impl(ghc >=8.8.1))
+    exposed-modules:
+    - Haskell.DAP
+  - condition: (impl(ghc >=8.0.0)) && (impl(ghc <8.8.0))
+    exposed-modules:
+    - Haskell.DAP
+    - GHCi.DAP.IFData
   dependencies:
   - base >=4.7 && <5
   - containers
 
+
 executables:
   haskell-dap:
-    main: Main.hs
-    source-dirs: app
     ghc-options:
     - -threaded
     - -rtsopts
@@ -43,50 +47,68 @@ executables:
     - -fno-warn-name-shadowing
     cc-options: -fPIC
     cpp-options: -DGHCI
-    dependencies:
-    - base >=4.7 && <5
-    - ghc
-    - ghci
-    - ghc-paths
-    - transformers
-    - containers
-    - time
-    - directory
-    - haskeline
-    - array
-    - process
-    - ghc-boot
-    - filepath
-    - bytestring
-    - deepseq
-    - haskell-dap
-    - text
-    when:
-    - condition: (impl(ghc >=8.0.0)) && (impl(ghc <8.1.0))
-      source-dirs: app-ghc-8.0
-    - condition: (impl(ghc >=8.2.0)) && (impl(ghc <8.3.0))
-      source-dirs: app-ghc-8.2
-    - condition: (impl(ghc >=8.4.0)) && (impl(ghc <8.5.0))
-      source-dirs: app-ghc-8.4
-    - condition: (impl(ghc >=8.6.0)) && (impl(ghc <8.7.0))
-      source-dirs: app-ghc-8.6
 
-    - condition: (impl(ghc >=8.0.0)) && (impl(ghc <8.1.0))
+    when:
+    - condition: (impl(ghc >= 8.8.1))
+      source-dirs: app
+      main: MainDeprecated.hs
+      other-modules:
+      - Haskell.DAP.Constant
+      dependencies:
+      - base >=4.7 && <5
+
+    - condition: (impl(ghc >= 8.0.0)) && (impl(ghc < 8.8.0))
+      source-dirs: app
+      main: Main.hs
+      other-modules:
+      - Haskell.DAP.GHCi.Command
+      - Haskell.DAP.GHCi.Constant
+      - Haskell.DAP.GHCi.Type
+      - Haskell.DAP.GHCi.Utility
+      - Paths_haskell_dap
+      dependencies:
+      - base >=4.7 && <5
+      - ghc
+      - ghci
+      - ghc-paths
+      - transformers
+      - containers
+      - time
+      - directory
+      - haskeline
+      - array
+      - process
+      - ghc-boot
+      - filepath
+      - bytestring
+      - deepseq
+      - haskell-dap
+      - text
+
+    - condition: (impl(ghc >= 8.0.0)) && (impl(ghc < 8.1.0))
+      source-dirs: app-ghc-8.0
       c-sources: src-c-8.0/hschooks.c
       include-dirs:
       - src-c-8.0/
-    - condition: (impl(ghc >=8.2.0)) && (impl(ghc <8.3.0))
+
+    - condition: (impl(ghc >= 8.2.0)) && (impl(ghc < 8.3.0))
+      source-dirs: app-ghc-8.2
       c-sources: src-c-8.2/hschooks.c
       include-dirs:
       - src-c-8.2/
-    - condition: (impl(ghc >=8.4.0)) && (impl(ghc <8.5.0))
+
+    - condition: (impl(ghc >= 8.4.0)) && (impl(ghc < 8.5.0))
+      source-dirs: app-ghc-8.4
       c-sources: src-c-8.4/hschooks.c
       include-dirs:
       - src-c-8.4/
-    - condition: (impl(ghc >=8.6.0)) && (impl(ghc <8.7.0))
+
+    - condition: (impl(ghc >= 8.6.0)) && (impl(ghc < 8.7.0))
+      source-dirs: app-ghc-8.6
       c-sources: src-c-8.6/hschooks.c
       include-dirs:
       - src-c-8.6/
+
     - condition: os(windows)
       then:
         dependencies:
@@ -94,3 +116,7 @@ executables:
       else:
         dependencies:
         - unix
+
+
+
+
