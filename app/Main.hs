@@ -1,8 +1,23 @@
 {-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE CPP #-}
 
 module Main where
 
+#if __GLASGOW_HASKELL__ >= 808
+import Haskell.DAP.Constant
+
+-- |
+--  MainDeprecated
+--
+main :: IO ()
+main = do
+  putStrLn _DEPRECATED_MSG
+  return ()
+
+#endif
+
+#if __GLASGOW_HASKELL__ < 808
 import qualified GHCMain as G
 import qualified GHCi.UI as G
 import Control.Concurrent
@@ -26,4 +41,5 @@ main = do
       withDapCommands = defaultCommands ++ (dapCommands mvarCtx)
 
   G.ghcMain ghciSettings {G.availableCommands = withDapCommands}
-  
+
+#endif

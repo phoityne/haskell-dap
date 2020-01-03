@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: b18bcfd88cc1a32afb15451421e87c2cc2e7225e0f2821075e9234aac41730e7
+-- hash: 1f6ff9e940d0ef4eef74e8a81b41778030f8290aa2680a5233258ee8fc2f80f6
 
 name:           haskell-dap
 version:        0.0.14.0
@@ -15,7 +15,7 @@ homepage:       https://github.com/phoityne/haskell-dap
 bug-reports:    https://github.com/phoityne/haskell-dap/issues
 author:         phoityne_hs
 maintainer:     phoityne.hs@gmail.com
-copyright:      2017-2019 phoityne_hs
+copyright:      2017-2020 phoityne_hs
 license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
@@ -49,27 +49,24 @@ library
   default-language: Haskell2010
 
 executable haskell-dap
+  main-is: Main.hs
+  hs-source-dirs:
+      app
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall -fno-warn-unused-do-bind -fno-warn-name-shadowing
   cpp-options: -DGHCI
   cc-options: -fPIC
   if (impl(ghc >= 8.8.1))
-    main-is: MainDeprecated.hs
     other-modules:
         Haskell.DAP.Constant
-    hs-source-dirs:
-        app
     build-depends:
         base >=4.7 && <5
   if (impl(ghc >= 8.0.0)) && (impl(ghc < 8.8.0))
-    main-is: Main.hs
     other-modules:
         Haskell.DAP.GHCi.Command
         Haskell.DAP.GHCi.Constant
         Haskell.DAP.GHCi.Type
         Haskell.DAP.GHCi.Utility
         Paths_haskell_dap
-    hs-source-dirs:
-        app
     build-depends:
         array
       , base >=4.7 && <5

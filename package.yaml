@@ -47,19 +47,17 @@ executables:
     - -fno-warn-name-shadowing
     cc-options: -fPIC
     cpp-options: -DGHCI
+    main: Main.hs
+    source-dirs: app
 
     when:
     - condition: (impl(ghc >= 8.8.1))
-      source-dirs: app
-      main: MainDeprecated.hs
       other-modules:
       - Haskell.DAP.Constant
       dependencies:
       - base >=4.7 && <5
 
     - condition: (impl(ghc >= 8.0.0)) && (impl(ghc < 8.8.0))
-      source-dirs: app
-      main: Main.hs
       other-modules:
       - Haskell.DAP.GHCi.Command
       - Haskell.DAP.GHCi.Constant
