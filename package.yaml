@@ -23,14 +23,9 @@ extra-source-files:
 
 library:
   source-dirs: src
-  when:
-  - condition: (impl(ghc >=8.8.1))
-    exposed-modules:
-    - Haskell.DAP
-  - condition: (impl(ghc >=8.0.0)) && (impl(ghc <8.8.0))
-    exposed-modules:
-    - Haskell.DAP
-    - GHCi.DAP.IFData
+  exposed-modules:
+  - Haskell.DAP
+  - GHCi.DAP.IFData
   dependencies:
   - base >=4.7 && <5
   - containers
