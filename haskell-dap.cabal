@@ -1,13 +1,13 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.31.2.
+-- This file has been generated from package.yaml by hpack version 0.33.0.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 6e4b98107eecd368e384a77642103174c33fff62cbaceb0282d6a28aefb34017
+-- hash: 7f6a288a900cbba569fdf25c9c52b834a1f1bae8f883716fc76f64cf2388dfad
 
 name:           haskell-dap
-version:        0.0.14.0
+version:        0.0.15.0
 synopsis:       Haskell implementation of the DAP interface data.
 description:    Please see README.md
 category:       Development
@@ -22,19 +22,10 @@ build-type:     Simple
 extra-source-files:
     README.md
     Changelog.md
-    src-c-8.0/HsVersions.h
-    src-c-8.0/PosixSource.h
-    src-c-8.2/HsVersions.h
-    src-c-8.2/PosixSource.h
-    src-c-8.4/HsVersions.h
-    src-c-8.4/PosixSource.h
-    src-c-8.6/HsVersions.h
-    src-c-8.6/PosixSource.h
 
 library
   exposed-modules:
       Haskell.DAP
-      GHCi.DAP.IFData
   other-modules:
       Paths_haskell_dap
   hs-source-dirs:
@@ -42,102 +33,4 @@ library
   build-depends:
       base >=4.7 && <5
     , containers
-  default-language: Haskell2010
-
-executable haskell-dap
-  main-is: Main.hs
-  hs-source-dirs:
-      app
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall -fno-warn-unused-do-bind -fno-warn-name-shadowing
-  cpp-options: -DGHCI
-  cc-options: -fPIC
-  if (impl(ghc >= 8.8.1))
-    other-modules:
-        Haskell.DAP.Constant
-    build-depends:
-        base >=4.7 && <5
-  if (impl(ghc >= 8.0.0)) && (impl(ghc < 8.8.0))
-    other-modules:
-        Haskell.DAP.GHCi.Command
-        Haskell.DAP.GHCi.Constant
-        Haskell.DAP.GHCi.Type
-        Haskell.DAP.GHCi.Utility
-        Paths_haskell_dap
-    build-depends:
-        array
-      , base >=4.7 && <5
-      , bytestring
-      , containers
-      , deepseq
-      , directory
-      , filepath
-      , ghc
-      , ghc-boot
-      , ghc-paths
-      , ghci
-      , haskeline
-      , haskell-dap
-      , process
-      , text
-      , time
-      , transformers
-  if (impl(ghc >= 8.0.0)) && (impl(ghc < 8.1.0))
-    other-modules:
-        GHCi.UI
-        GHCi.UI.Info
-        GHCi.UI.Monad
-        GHCi.UI.Tags
-        GHCMain
-    hs-source-dirs:
-        app-ghc-8.0
-    include-dirs:
-        src-c-8.0/
-    c-sources:
-        src-c-8.0/hschooks.c
-  if (impl(ghc >= 8.2.0)) && (impl(ghc < 8.3.0))
-    other-modules:
-        GHCi.UI
-        GHCi.UI.Info
-        GHCi.UI.Monad
-        GHCi.UI.Tags
-        GHCMain
-    hs-source-dirs:
-        app-ghc-8.2
-    include-dirs:
-        src-c-8.2/
-    c-sources:
-        src-c-8.2/hschooks.c
-  if (impl(ghc >= 8.4.0)) && (impl(ghc < 8.5.0))
-    other-modules:
-        GHCi.UI
-        GHCi.UI.Info
-        GHCi.UI.Monad
-        GHCi.UI.Tags
-        GHCMain
-    hs-source-dirs:
-        app-ghc-8.4
-    include-dirs:
-        src-c-8.4/
-    c-sources:
-        src-c-8.4/hschooks.c
-  if (impl(ghc >= 8.6.0)) && (impl(ghc < 8.7.0))
-    other-modules:
-        GHCi.Leak
-        GHCi.UI
-        GHCi.UI.Info
-        GHCi.UI.Monad
-        GHCi.UI.Tags
-        GHCMain
-    hs-source-dirs:
-        app-ghc-8.6
-    include-dirs:
-        src-c-8.6/
-    c-sources:
-        src-c-8.6/hschooks.c
-  if os(windows)
-    build-depends:
-        Win32
-  else
-    build-depends:
-        unix
   default-language: Haskell2010

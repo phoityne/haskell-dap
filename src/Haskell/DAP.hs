@@ -1,4 +1,3 @@
-
 {-|
 Module      : Haskell.DAP
 Description : Implementation of DAP interface data type.
