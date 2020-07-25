@@ -270,7 +270,7 @@ data Source =
     nameSource             :: Maybe String  -- ^The short name of the source. Every source returned from the debug adapter has a name. When sending a source to the debug adapter this name is optional.
   , pathSource             :: String        -- ^The path of the source to be shown in the UI. It is only used to locate and load the content of the source if no sourceReference is specified (or its vaule is 0).
   , sourceReferenceSource  :: Maybe Int     -- ^If sourceReference > 0 the contents of the source must be retrieved through the SourceRequest (even if a path is specified). A sourceReference is only valid for a session, so it must not be used to persist a source.
-  , origineSource          :: Maybe String  -- ^The (optional) origin of this source: possible values 'internal module', 'inlined content from source map', etc.
+  , originSource           :: Maybe String  -- ^The (optional) origin of this source: possible values 'internal module', 'inlined content from source map', etc.
   } deriving (Show, Read, Eq)
 
 
@@ -281,7 +281,7 @@ defaultSource = Source {
     nameSource             = Nothing
   , pathSource             = ""
   , sourceReferenceSource  = Nothing
-  , origineSource          = Nothing
+  , originSource           = Nothing
   }
 
 

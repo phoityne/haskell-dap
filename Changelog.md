@@ -1,3 +1,9 @@
+20200725 haskell-dap-0.0.15.0
+
+  * [MODIFY] Support ghc-8.10.
+  * [FIX] mis-spelling.
+
+
 20200105 haskell-dap-0.0.14.0
 
   * [MODIFY] Support ghc-8.8. (executable is deprecated.)
