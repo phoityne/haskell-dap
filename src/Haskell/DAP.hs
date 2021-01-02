@@ -75,6 +75,7 @@ module Haskell.DAP (
   , SetFunctionBreakpointsResponse(..)
   , SetFunctionBreakpointsResponseBody(..)
   , defaultSetFunctionBreakpointsResponse
+  , defaultSetFunctionBreakpointsResponseBody
 
     -- * setExceptionBreakpoints
   , SetExceptionBreakpointsRequest(..)
@@ -113,6 +114,7 @@ module Haskell.DAP (
   , ScopesResponse(..)
   , defaultScopesResponse
   , ScopesResponseBody(..)
+  , defaultScopesResponseBody
 
     -- * variables
   , VariablesRequest(..)
