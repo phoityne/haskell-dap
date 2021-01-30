@@ -1,4 +1,4 @@
-20210105 haskell-dap-0.0.15.0
+20210131 haskell-dap-0.0.15.0
 
   * [MODIFY] Support ghc-8.10.
   * [FIX] mis-spelling.
