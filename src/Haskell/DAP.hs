@@ -127,6 +127,14 @@ module Haskell.DAP (
   , VariablesResponseBody(..)
   , defaultVariablesResponseBody
 
+  -- * source
+  , SourceRequest(..)
+  , SourceRequestArguments(..)
+  , SourceResponse(..)
+  , defaultSourceResponse
+  , SourceResponseBody(..)
+  , defaultSourceResponseBody
+
     -- * continue
   , ContinueRequest(..)
   , ContinueRequestArguments(..)
@@ -1442,6 +1450,77 @@ data VariablePresentationHint =
   , visibilityVariablePresentationHint :: String
   } deriving (Show, Read, Eq)
 
+
+----------------------------------------------------------------------------
+--  Source
+----------------------------------------------------------------------------
+
+-- |
+--   Source request; value of command field is "source".
+--
+--   Retrieves the content of the file which the debugger steps into.
+data SourceRequest = SourceRequest {
+    seqSourceRequest       :: Int                   -- ^Sequence number
+  , typeSourceRequest      :: String                -- ^One of "request", "response", or "event"
+  , commandSourceRequest   :: String                -- ^The command to execute
+  , argumentsSourceRequest :: SourceRequestArguments  -- ^Arguments for "source" request.
+  } deriving (Show, Read, Eq)
+
+
+-- |
+--   Arguments for 'source' request.
+--
+data SourceRequestArguments = SourceRequestArguments {
+    sourceSourceRequestArguments :: Maybe Source,
+    sourceReferenceSourceRequestArguments :: Int  -- ^Retrieve the content of thie source.
+  }
+  deriving (Show, Read, Eq)
+
+
+-- |
+--   Response to "source" request.
+--
+data SourceResponse = SourceResponse {
+    seqSourceResponse         :: Int     -- ^Sequence number
+  , typeSourceResponse        :: String  -- ^One of "request", "response", or "event"
+  , request_seqSourceResponse :: Int     -- ^Sequence number of the corresponding request
+  , successSourceResponse     :: Bool    -- ^Outcome of the request
+  , commandSourceResponse     :: String  -- ^The command requested
+  , messageSourceResponse     :: String  -- ^Contains error message if success == false.
+  , bodySourceResponse        :: SourceResponseBody  -- ^The body of VariablesResponse
+  } deriving (Show, Read, Eq)
+
+
+-- |
+--
+defaultSourceResponse :: SourceResponse
+defaultSourceResponse = SourceResponse {
+    seqSourceResponse = 0
+  , typeSourceResponse = "response"
+  , request_seqSourceResponse = 0
+  , successSourceResponse = False
+  , commandSourceResponse = "source"
+  , messageSourceResponse = ""
+  , bodySourceResponse = defaultSourceResponseBody
+  }
+
+
+-- |
+--   Response to "source" request.
+--
+data SourceResponseBody  = SourceResponseBody {
+    contentSourceResponseBody ::  String  -- ^Content of the requested source
+  , mimeTypeSourceResponseBody :: Maybe String -- ^Optional mimetype
+  } deriving (Show, Read, Eq)
+
+
+-- |
+--
+defaultSourceResponseBody :: SourceResponseBody
+defaultSourceResponseBody = SourceResponseBody {
+    contentSourceResponseBody = ""
+  , mimeTypeSourceResponseBody = Nothing
+  }
 
 
 ----------------------------------------------------------------------------
