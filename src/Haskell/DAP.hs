@@ -15,7 +15,7 @@ module Haskell.DAP (
 
     -- * commons
     _THREAD_ID
-  , Request(..)
+   , Request(..)
   , defaultRequest
   , Response(..)
   , ColumnDescriptor(..)
@@ -36,8 +36,10 @@ module Haskell.DAP (
   , defaultInitializeResponseBody
 
     -- * disconnect
-  , DisconnectRequest(..)
   , DisconnectRequestArguments(..)
+  , defaultDisconnectRequestArguments
+  , DisconnectRequest(..)
+  , defaultDisconnectRequest
   , DisconnectResponse(..)
   , defaultDisconnectResponse
 
@@ -48,24 +50,31 @@ module Haskell.DAP (
   , defaultPauseResponse
 
     -- * terminate
-  , TerminateRequest(..)
   , TerminateRequestArguments(..)
+  , defaultTerminateRequestArguments
+  , TerminateRequest(..)
+  , defaultTerminateRequest
   , TerminateResponse(..)
   , defaultTerminateResponse
 
     -- * launch
   , LaunchRequest(..)
+  , defaultLaunchRequest
   , LaunchRequestArguments(..)
+  , defaultLaunchRequestArguments
   , LaunchResponse(..)
   , defaultLaunchResponse
 
     -- * setBreakpoints
   , SourceBreakpoint(..)
-  , SetBreakpointsRequest(..)
+  , defaultSourceBreakpoint
   , SetBreakpointsRequestArguments(..)
+  , defaultSetBreakpointsRequestArguments
+  , SetBreakpointsRequest(..)
+  , defaultSetBreakpointsRequest
   , SetBreakpointsResponse(..)
-  , SetBreakpointsResponseBody(..)
   , defaultSetBreakpointsResponse
+  , SetBreakpointsResponseBody(..)
   , defaultSetBreakpointsResponseBody
 
     -- * setFunctionBreakpoints
@@ -97,8 +106,10 @@ module Haskell.DAP (
   , defaultThreadsResponseBody
 
     -- * stackTrace
-  , StackTraceRequest(..)
   , StackTraceRequestArguments(..)
+  , defaultStackTraceRequestArguments
+  , StackTraceRequest(..)
+  , defaultStackTraceRequest
   , StackFrame(..)
   , defaultStackFrame
   , StackTraceResponse(..)
@@ -107,8 +118,10 @@ module Haskell.DAP (
   , defaultStackTraceResponseBody
 
     -- * scopes
-  , ScopesRequest(..)
   , ScopesRequestArguments(..)
+  , defaultScopesRequestArguments
+  , ScopesRequest(..)
+  , defaultScopesRequest
   , Scope(..)
   , defaultScope
   , ScopesResponse(..)
@@ -117,8 +130,10 @@ module Haskell.DAP (
   , defaultScopesResponseBody
 
     -- * variables
-  , VariablesRequest(..)
   , VariablesRequestArguments(..)
+  , defaultVariablesRequestArguments
+  , VariablesRequest(..)
+  , defaultVariablesRequest
   , Variable(..)
   , defaultVariable
   , VariablePresentationHint(..)
@@ -136,9 +151,10 @@ module Haskell.DAP (
   , defaultSourceResponseBody
 
     -- * continue
-  , ContinueRequest(..)
   , ContinueRequestArguments(..)
   , defaultContinueRequestArguments
+  , ContinueRequest(..)
+  , defaultContinueRequest
   , ContinueResponse(..)
   , defaultContinueResponse
 
@@ -214,7 +230,6 @@ import qualified Data.Map as M
 --
 _THREAD_ID :: Int
 _THREAD_ID = 0
-
 
 -- |
 --   Client-initiated request
@@ -474,6 +489,22 @@ defaultInitializeResponseBody = InitializeResponseBody {
 ----------------------------------------------------------------------------
 
 -- |
+--   Arguments for 'disconnect' request.
+--
+data DisconnectRequestArguments =
+  DisconnectArguments {
+    restartDisconnectRequestArguments :: Maybe Bool  -- ^A value of true indicates that this 'disconnect' request is part of a restart sequence.
+  } deriving (Show, Read, Eq)
+
+-- |
+--
+defaultDisconnectRequestArguments :: DisconnectRequestArguments
+defaultDisconnectRequestArguments = DisconnectArguments {
+    restartDisconnectRequestArguments = Nothing
+  }
+
+
+-- |
 --   Disconnect request; value of command field is 'disconnect'.
 --
 --	The 'disconnect' request is sent from the client to the debug adapter in order to stop debugging.
@@ -494,15 +525,15 @@ data DisconnectRequest =
   , argumentsDisconnectRequest :: Maybe DisconnectRequestArguments  -- ^Arguments for "disconnect" request.
   } deriving (Show, Read, Eq)
 
-
 -- |
---   Arguments for 'disconnect' request.
 --
-data DisconnectRequestArguments =
-  DisconnectArguments {
-    restartDisconnectRequestArguments :: Maybe Bool  -- ^A value of true indicates that this 'disconnect' request is part of a restart sequence.
-  } deriving (Show, Read, Eq)
-
+defaultDisconnectRequest :: DisconnectRequest
+defaultDisconnectRequest = DisconnectRequest {
+    seqDisconnectRequest       = 0
+  , typeDisconnectRequest      = "request"
+  , commandDisconnectRequest   = "disconnect"
+  , argumentsDisconnectRequest = Nothing
+  }
 
 -- |
 --   Response to 'disconnect' request. This is just an acknowledgement, so no body field is required.
@@ -594,6 +625,23 @@ defaultPauseResponse = PauseResponse {
 --  Terminate
 ----------------------------------------------------------------------------
 
+
+-- |
+--   Arguments for 'terminate' request.
+--
+data TerminateRequestArguments =
+  TerminateArguments {
+    restartTerminateRequestArguments :: Maybe Bool  -- ^A value of true indicates that this 'terminate' request is part of a restart sequence.
+  } deriving (Show, Read, Eq)
+
+-- |
+--
+defaultTerminateRequestArguments :: TerminateRequestArguments
+defaultTerminateRequestArguments = TerminateArguments {
+    restartTerminateRequestArguments = Nothing
+  }
+
+
 -- |
 --   Terminate request; value of command field is 'terminate'.
 --
@@ -607,14 +655,15 @@ data TerminateRequest =
   , argumentsTerminateRequest :: Maybe TerminateRequestArguments  -- ^Arguments for "terminate" request.
   } deriving (Show, Read, Eq)
 
-
 -- |
---   Arguments for 'terminate' request.
 --
-data TerminateRequestArguments =
-  TerminateArguments {
-    restartTerminateRequestArguments :: Maybe Bool  -- ^A value of true indicates that this 'terminate' request is part of a restart sequence.
-  } deriving (Show, Read, Eq)
+defaultTerminateRequest :: TerminateRequest
+defaultTerminateRequest = TerminateRequest {
+    seqTerminateRequest       = 0
+  , typeTerminateRequest      = "request"
+  , commandTerminateRequest   = "terminate"
+  , argumentsTerminateRequest = Nothing
+  }
 
 
 -- |
@@ -649,22 +698,6 @@ defaultTerminateResponse = TerminateResponse {
 ----------------------------------------------------------------------------
 
 -- |
---   Launch request; value of command field is 'launch'.
---
---		The launch request is sent from the client to the debug adapter to start the debuggee with or without debugging (if 'noDebug' is true).
---
---     Since launching is debugger/runtime specific, the arguments for this request are not part of this specification.
---
-data LaunchRequest =
-  LaunchRequest {
-    seqLaunchRequest       :: Int                     -- ^Sequence number
-  , typeLaunchRequest      :: String                  -- ^One of "request", "response", or "event"
-  , commandLaunchRequest   :: String                  -- ^The command to execute
-  , argumentsLaunchRequest :: LaunchRequestArguments  -- ^Arguments for "launch" request.
-  } deriving (Show, Read, Eq)
-
-
--- |
 --   Arguments for 'launch' request. Additional attributes are implementation specific.
 --
 data LaunchRequestArguments =
@@ -688,6 +721,55 @@ data LaunchRequestArguments =
   , forceInspectLaunchRequestArguments :: Maybe Bool           -- ^Phoityne specific argument. Inspect variable force.
   } deriving (Show, Read, Eq)
 
+-- |
+--
+defaultLaunchRequestArguments :: LaunchRequestArguments
+defaultLaunchRequestArguments = LaunchRequestArguments {
+    noDebugLaunchRequestArguments      = Nothing
+  , nameLaunchRequestArguments         = ""
+  , typeLaunchRequestArguments         = ""
+  , requestLaunchRequestArguments      = ""
+  , startupLaunchRequestArguments      = ""
+  , workspaceLaunchRequestArguments    = ""
+  , logFileLaunchRequestArguments      = ""
+  , logLevelLaunchRequestArguments     = ""
+  , ghciPromptLaunchRequestArguments   = ""
+  , ghciCmdLaunchRequestArguments      = ""
+  , stopOnEntryLaunchRequestArguments  = False
+  , mainArgsLaunchRequestArguments     = Nothing
+  , ghciEnvLaunchRequestArguments      = M.empty
+  , ghciInitialPromptLaunchRequestArguments = Nothing
+  , startupFuncLaunchRequestArguments  = Nothing
+  , startupArgsLaunchRequestArguments  = Nothing
+  , forceInspectLaunchRequestArguments = Nothing
+  }
+
+
+
+-- |
+--   Launch request; value of command field is 'launch'.
+--
+--		The launch request is sent from the client to the debug adapter to start the debuggee with or without debugging (if 'noDebug' is true).
+--
+--     Since launching is debugger/runtime specific, the arguments for this request are not part of this specification.
+--
+data LaunchRequest =
+  LaunchRequest {
+    seqLaunchRequest       :: Int                     -- ^Sequence number
+  , typeLaunchRequest      :: String                  -- ^One of "request", "response", or "event"
+  , commandLaunchRequest   :: String                  -- ^The command to execute
+  , argumentsLaunchRequest :: LaunchRequestArguments  -- ^Arguments for "launch" request.
+  } deriving (Show, Read, Eq)
+
+-- |
+--
+defaultLaunchRequest :: LaunchRequest
+defaultLaunchRequest = LaunchRequest {
+    seqLaunchRequest       = 0
+  , typeLaunchRequest      = "request"
+  , commandLaunchRequest   = "launch"
+  , argumentsLaunchRequest = defaultLaunchRequestArguments
+  }
 
 -- |
 --   Response to 'launch' request. This is just an acknowledgement, so no body field is required.
@@ -733,6 +815,35 @@ data SourceBreakpoint =
   } deriving (Show, Read, Eq)
 
 -- |
+--
+defaultSourceBreakpoint :: SourceBreakpoint
+defaultSourceBreakpoint = SourceBreakpoint {
+    lineSourceBreakpoint         = 0
+  , columnSourceBreakpoint       = Nothing
+  , conditionSourceBreakpoint    = Nothing
+  , hitConditionSourceBreakpoint = Nothing
+  , logMessageSourceBreakpoint   = Nothing
+  }
+
+-- |
+--   Arguments for 'setBreakpoints' request.
+--
+data SetBreakpointsRequestArguments =
+  SetBreakpointsRequestArguments {
+    sourceSetBreakpointsRequestArguments         :: Source              -- ^The source location of the breakpoints; either source.path or source.reference must be specified.
+  , breakpointsSetBreakpointsRequestArguments    :: [SourceBreakpoint]  -- ^The code locations of the breakpoints.
+  } deriving (Show, Read, Eq)
+
+-- |
+--
+defaultSetBreakpointsRequestArguments :: SetBreakpointsRequestArguments
+defaultSetBreakpointsRequestArguments = SetBreakpointsRequestArguments {
+    sourceSetBreakpointsRequestArguments         = defaultSource
+  , breakpointsSetBreakpointsRequestArguments    = []
+  }
+
+
+-- |
 --   SetBreakpoints request; value of command field is "setBreakpoints".
 --
 --   Sets multiple breakpoints for a single source and clears all previous breakpoints in that source.
@@ -749,16 +860,15 @@ data SetBreakpointsRequest =
   , argumentsSetBreakpointsRequest :: SetBreakpointsRequestArguments  -- ^Arguments for "setBreakpoints" request.
   } deriving (Show, Read, Eq)
 
-
-
 -- |
---   Arguments for 'setBreakpoints' request.
 --
-data SetBreakpointsRequestArguments =
-  SetBreakpointsRequestArguments {
-    sourceSetBreakpointsRequestArguments         :: Source              -- ^The source location of the breakpoints; either source.path or source.reference must be specified.
-  , breakpointsSetBreakpointsRequestArguments    :: [SourceBreakpoint]  -- ^The code locations of the breakpoints.
-  } deriving (Show, Read, Eq)
+defaultSetBreakpointsRequest =
+  SetBreakpointsRequest {
+    seqSetBreakpointsRequest       = 0
+  , typeSetBreakpointsRequest      = "request"
+  , commandSetBreakpointsRequest   = "setBreakpoints"
+  , argumentsSetBreakpointsRequest = defaultSetBreakpointsRequestArguments
+  }
 
 
 
@@ -1100,6 +1210,25 @@ defaultThread = Thread _THREAD_ID "ghci main thread"
 ----------------------------------------------------------------------------
 
 -- |
+--  Arguments for 'stackTrace' request.
+--
+data StackTraceRequestArguments =
+  StackTraceRequestArguments {
+    threadIdStackTraceRequestArguments   :: Int        -- ^Retrieve the stacktrace for this thread.
+  , startFrameStackTraceRequestArguments :: Maybe Int  -- ^The index of the first frame to return; if omitted frames start at 0.
+  , levelsStackTraceRequestArguments     :: Maybe Int  -- ^The maximum number of frames to return. If levels is not specified or 0, all frames are returned.
+  } deriving (Show, Read, Eq)
+
+-- |
+--
+defaultStackTraceRequestArguments :: StackTraceRequestArguments
+defaultStackTraceRequestArguments = StackTraceRequestArguments {
+    threadIdStackTraceRequestArguments   = 0
+  , startFrameStackTraceRequestArguments = Nothing
+  , levelsStackTraceRequestArguments     = Nothing
+  }
+
+-- |
 --   StackTrace request; value of command field is "stackTrace".
 --
 --   The request returns a stacktrace from the current execution state.
@@ -1112,17 +1241,15 @@ data StackTraceRequest =
   , argumentsStackTraceRequest :: StackTraceRequestArguments  -- ^Arguments for "stackTrace" request.
   } deriving (Show, Read, Eq)
 
-
 -- |
---  Arguments for 'stackTrace' request.
 --
-data StackTraceRequestArguments =
-  StackTraceRequestArguments {
-    threadIdStackTraceRequestArguments   :: Int        -- ^Retrieve the stacktrace for this thread.
-  , startFrameStackTraceRequestArguments :: Maybe Int  -- ^The index of the first frame to return; if omitted frames start at 0.
-  , levelsStackTraceRequestArguments     :: Maybe Int  -- ^The maximum number of frames to return. If levels is not specified or 0, all frames are returned.
-  } deriving (Show, Read, Eq)
-
+defaultStackTraceRequest :: StackTraceRequest
+defaultStackTraceRequest = StackTraceRequest {
+    seqStackTraceRequest       = 0
+  , typeStackTraceRequest      = "request"
+  , commandStackTraceRequest   = "stackTrace"
+  , argumentsStackTraceRequest = defaultStackTraceRequestArguments
+  }
 
 -- |
 --   A Stackframe contains the source location.
@@ -1201,6 +1328,22 @@ defaultStackTraceResponseBody = StackTraceResponseBody {
 
 
 -- |
+--   Arguments for "scopes" request.
+--
+data ScopesRequestArguments =
+  ScopesRequestArguments {
+    frameIdScopesRequestArguments :: Int  -- ^Retrieve the scopes for this stackframe.
+  } deriving (Show, Read, Eq)
+
+-- |
+--
+defaultScopesRequestArguments :: ScopesRequestArguments
+defaultScopesRequestArguments = ScopesRequestArguments {
+    frameIdScopesRequestArguments = 0
+  }
+
+
+-- |
 --   Scopes request; value of command field is "scopes".
 --
 --   The request returns the variable scopes for a given stackframe ID.
@@ -1215,13 +1358,14 @@ data ScopesRequest =
 
 
 -- |
---   Arguments for "scopes" request.
 --
-data ScopesRequestArguments =
-  ScopesRequestArguments {
-    frameIdScopesRequestArguments :: Int  -- ^Retrieve the scopes for this stackframe.
-  } deriving (Show, Read, Eq)
-
+defaultScopesRequest :: ScopesRequest
+defaultScopesRequest = ScopesRequest {
+    seqScopesRequest       = 0
+  , typeScopesRequest      = "request"
+  , commandScopesRequest   = "scopes"
+  , argumentsScopesRequest = defaultScopesRequestArguments
+  }
 
 -- |
 --  Response to "scopes" request.
@@ -1294,6 +1438,22 @@ defaultScope = Scope {
 --  Variables
 ----------------------------------------------------------------------------
 
+
+-- |
+--   Arguments for 'variables' request.
+--
+data VariablesRequestArguments =
+  VariablesRequestArguments {
+    variablesReferenceVariablesRequestArguments :: Int  -- ^The Variable reference.
+  } deriving (Show, Read, Eq)
+
+-- |
+--
+defaultVariablesRequestArguments :: VariablesRequestArguments
+defaultVariablesRequestArguments = VariablesRequestArguments {
+    variablesReferenceVariablesRequestArguments = 0
+  }
+
 -- |
 --   Variables request; value of command field is "variables".
 --
@@ -1307,6 +1467,15 @@ data VariablesRequest =
   , argumentsVariablesRequest :: VariablesRequestArguments  -- ^Arguments for "variables" request.
   } deriving (Show, Read, Eq)
 
+-- |
+--
+defaultVariablesRequest :: VariablesRequest
+defaultVariablesRequest = VariablesRequest {
+    seqVariablesRequest       = 0
+  , typeVariablesRequest      = "request"
+  , commandVariablesRequest   = "variables"
+  , argumentsVariablesRequest = defaultVariablesRequestArguments
+  }
 
 -- |
 --  Response to "variables" request.
@@ -1336,14 +1505,6 @@ defaultVariablesResponse = VariablesResponse {
   , bodyVariablesResponse        = defaultVariablesResponseBody
   }
 
-
--- |
---   Arguments for 'variables' request.
---
-data VariablesRequestArguments =
-  VariablesRequestArguments {
-    variablesReferenceVariablesRequestArguments :: Int  -- ^The Variable reference.
-  } deriving (Show, Read, Eq)
 
 
 -- |
@@ -1528,21 +1689,6 @@ defaultSourceResponseBody = SourceResponseBody {
 ----------------------------------------------------------------------------
 
 -- |
---   Continue request; value of command field is "continue".
---
---   The request starts the debuggee to run again.
---
-data ContinueRequest =
-  ContinueRequest {
-    seqContinueRequest       :: Int               -- ^Sequence number
-  , typeContinueRequest      :: String            -- ^One of "request", "response", or "event"
-  , commandContinueRequest   :: String            -- ^The command to execute
-  , argumentsContinueRequest :: ContinueRequestArguments -- ^Arguments for "continue" request.
-  } deriving (Show, Read, Eq)
-
-
-
--- |
 --   Arguments for 'continue' request.
 --
 data ContinueRequestArguments =
@@ -1558,6 +1704,30 @@ defaultContinueRequestArguments :: ContinueRequestArguments
 defaultContinueRequestArguments = ContinueRequestArguments {
     threadIdContinueRequestArguments = _THREAD_ID
   , exprContinueRequestArguments = Nothing
+  }
+
+
+-- |
+--   Continue request; value of command field is "continue".
+--
+--   The request starts the debuggee to run again.
+--
+data ContinueRequest =
+  ContinueRequest {
+    seqContinueRequest       :: Int               -- ^Sequence number
+  , typeContinueRequest      :: String            -- ^One of "request", "response", or "event"
+  , commandContinueRequest   :: String            -- ^The command to execute
+  , argumentsContinueRequest :: ContinueRequestArguments -- ^Arguments for "continue" request.
+  } deriving (Show, Read, Eq)
+
+-- |
+--
+defaultContinueRequest :: ContinueRequest
+defaultContinueRequest = ContinueRequest {
+    seqContinueRequest       = 0
+  , typeContinueRequest      = "request"
+  , commandContinueRequest   = "continue"
+  , argumentsContinueRequest = defaultContinueRequestArguments
   }
 
 
@@ -1930,6 +2100,7 @@ defaultOutputEventBody = OutputEventBody "console" "" Nothing
 data InitializedEvent =
   InitializedEvent {
     seqInitializedEvent   :: Int     -- ^Sequence number
+  , request_seqInitializedEvent   :: Int     -- ^Request Sequence number
   , typeInitializedEvent  :: String  -- ^One of "request", "response", or "event"
   , eventInitializedEvent :: String  -- ^Type of event
   } deriving (Show, Read, Eq)
@@ -1937,7 +2108,7 @@ data InitializedEvent =
 -- |
 --
 defaultInitializedEvent :: InitializedEvent
-defaultInitializedEvent = InitializedEvent 0 "event" "initialized"
+defaultInitializedEvent = InitializedEvent 0 0 "event" "initialized"
 
 
 -- |

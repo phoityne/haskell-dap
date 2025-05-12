@@ -1,13 +1,13 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.35.2.
+-- This file has been generated from package.yaml by hpack version 0.33.0.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 87c1cecf9d1a59206577035805962558fe1a6c17e1f52de6f1a0bfb609e7e83c
+-- hash: f4a728c6ff1db26ffb88719d91464f9cb9780e7ed22f636788b385fc1cd46041
 
 name:           haskell-dap
-version:        0.0.16.0
+version:        0.0.17.0
 synopsis:       Haskell implementation of the DAP interface data.
 description:    Please see README.md
 category:       Development
@@ -15,7 +15,7 @@ homepage:       https://github.com/phoityne/haskell-dap
 bug-reports:    https://github.com/phoityne/haskell-dap/issues
 author:         phoityne_hs
 maintainer:     phoityne.hs@gmail.com
-copyright:      2017-2022 phoityne_hs
+copyright:      2017-2025 phoityne_hs
 license:        BSD3
 license-file:   LICENSE
 build-type:     Simple

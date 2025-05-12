@@ -5,3 +5,4 @@ result*
 dist-newstyle
 .direnv
 hie.yaml
+.vscode/*
