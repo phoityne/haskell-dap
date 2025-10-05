@@ -1,9 +1,5 @@
-20250816 haskell-dap-0.0.17.0
-  * [ADD] default functions.
-
-
 20221120 haskell-dap-0.0.16.0
-  * [MODIFY] hdx4vsc ISSUE#27 Feature request: support jumping into library
+  * [FIX] ISSUE#13 add Source Request and Response
 
 
 20210131 haskell-dap-0.0.15.0
